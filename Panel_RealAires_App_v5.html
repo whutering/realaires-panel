@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Real Aires — Panel de Operaciones</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --navy:    #0F1F3D;
+  --blue:    #1A56DB;
+  --blue-lt: #DBEAFE;
+  --green:   #16A34A;
+  --grn-lt:  #DCFCE7;
+  --orange:  #EA580C;
+  --org-lt:  #FFEDD5;
+  --red:     #DC2626;
+  --red-lt:  #FEE2E2;
+  --purple:  #7C3AED;
+  --gold:    #D97706;
+  --teal:    #0D9488;
+  --teal-lt: #CCFBF1;
+  --gray:    #374151;
+  --gray-lt: #F9FAFB;
+  --border:  #E5E7EB;
+  --white:   #FFFFFF;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: #F1F5F9; color: var(--navy); font-size: 14px; }
+
+/* ── AUTH ── */
+#auth-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, var(--navy) 0%, #1e3a6e 100%);
+}
+.auth-card {
+  background: var(--white); border-radius: 16px; padding: 2.5rem;
+  width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.auth-logo { text-align: center; margin-bottom: 2rem; }
+.auth-logo h1 { font-size: 22px; font-weight: 700; color: var(--navy); letter-spacing: -0.5px; }
+.auth-logo p { font-size: 12px; color: #6B7280; margin-top: 4px; }
+.auth-card label { display: block; font-size: 12px; font-weight: 600; color: var(--gray); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.auth-card input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: border-color .15s; margin-bottom: 1rem; }
+.auth-card input:focus { border-color: var(--blue); }
+.btn-primary { width: 100%; padding: 12px; background: var(--navy); color: var(--white); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
+.btn-primary:hover { background: #1a2f5a; }
+.auth-error { background: var(--red-lt); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; display: none; }
+
+/* ── LAYOUT ── */
+#app { display: none; min-height: 100vh; }
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+  background: var(--navy); display: flex; flex-direction: column; z-index: 100;
+}
+.sidebar-logo { padding: 1.25rem 1.25rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-logo h2 { color: var(--white); font-size: 15px; font-weight: 700; }
+.sidebar-logo p { color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 0.75rem 0; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 1.25rem;
+  color: rgba(255,255,255,0.6); cursor: pointer; font-size: 13px; font-weight: 500;
+  transition: all .15s; border-left: 3px solid transparent;
+}
+.nav-item:hover { color: var(--white); background: rgba(255,255,255,0.06); }
+.nav-item.active { color: var(--white); background: rgba(255,255,255,0.1); border-left-color: #60A5FA; }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); }
+.user-info { color: rgba(255,255,255,0.5); font-size: 11px; margin-bottom: 8px; }
+.btn-logout { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border: none; border-radius: 6px; padding: 7px 12px; font-size: 12px; cursor: pointer; width: 100%; transition: background .15s; }
+.btn-logout:hover { background: rgba(255,255,255,0.15); }
+
+.main { margin-left: 220px; padding: 0; }
+.page-header { background: var(--white); border-bottom: 1px solid var(--border); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.page-header h1 { font-size: 16px; font-weight: 700; color: var(--navy); }
+.page-content { padding: 1.5rem; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── KPI CARDS ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+.kpi-card { background: var(--white); border-radius: 12px; padding: 1rem 1.25rem; border: 1px solid var(--border); }
+.kpi-label { font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 700; color: var(--navy); line-height: 1; }
+.kpi-sub { font-size: 11px; color: #9CA3AF; margin-top: 4px; }
+.kpi-card.blue .kpi-value { color: var(--blue); }
+.kpi-card.green .kpi-value { color: var(--green); }
+.kpi-card.orange .kpi-value { color: var(--orange); }
+.kpi-card.purple .kpi-value { color: var(--purple); }
+
+/* ── TABLES ── */
+.table-card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.table-toolbar { padding: 1rem 1.25rem; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.search-input { flex: 1; min-width: 200px; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
+.search-input:focus { border-color: var(--blue); }
+select.filter { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; background: var(--white); }
+.btn-add { padding: 8px 16px; background: var(--navy); color: var(--white); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .15s; white-space: nowrap; }
+.btn-add:hover { background: #1a2f5a; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: 0.4px; background: var(--gray-lt); border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 10px 14px; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #FAFBFC; }
+.badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.badge.realizada { background: var(--grn-lt); color: #15803D; }
+.badge.en-curso  { background: var(--org-lt); color: #C2410C; }
+.badge.caida     { background: var(--red-lt); color: #B91C1C; }
+.badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.action-btn { padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1.5px solid var(--border); background: var(--white); color: var(--gray); transition: all .15s; }
+.action-btn:hover { border-color: var(--navy); color: var(--navy); }
+.action-btn.del:hover { border-color: var(--red); color: var(--red); }
+.table-empty { text-align: center; padding: 3rem; color: #9CA3AF; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: none; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--white); border-radius: 16px; width: 100%; max-width: 680px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+.modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h2 { font-size: 16px; font-weight: 700; color: var(--navy); }
+.modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #9CA3AF; line-height: 1; padding: 4px; }
+.modal-close:hover { color: var(--navy); }
+.modal-body { padding: 1.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 11px; font-weight: 600; color: var(--gray); text-transform: uppercase; letter-spacing: 0.4px; }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; outline: none; transition: border-color .15s; background: var(--white);
+  font-family: inherit;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue); }
+.form-group textarea { resize: vertical; min-height: 72px; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+.btn-cancel { padding: 9px 18px; background: var(--white); border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--gray); }
+.btn-cancel:hover { border-color: var(--navy); color: var(--navy); }
+.btn-save { padding: 9px 20px; background: var(--navy); color: var(--white); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-save:hover { background: #1a2f5a; }
+
+/* ── DASHBOARD SPECIFIC ── */
+.dash-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+.section-title { font-size: 13px; font-weight: 700; color: var(--navy); padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+.monthly-row { display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem; border-bottom: 1px solid #F3F4F6; font-size: 13px; }
+.monthly-row:last-child { border-bottom: none; }
+.monthly-mes { width: 60px; font-weight: 600; color: var(--navy); }
+.monthly-bar-wrap { flex: 1; background: #F3F4F6; border-radius: 4px; height: 8px; overflow: hidden; }
+.monthly-bar { height: 100%; background: var(--blue); border-radius: 4px; transition: width .4s; }
+.monthly-bar.current { background: var(--gold); }
+.monthly-ops { width: 28px; text-align: center; font-weight: 700; color: var(--blue); }
+.monthly-com { width: 110px; text-align: right; color: #6B7280; font-size: 12px; }
+.monthly-row.current-month .monthly-mes { color: var(--gold); }
+.asesor-rank { display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem; border-bottom: 1px solid #F3F4F6; }
+.asesor-rank:last-child { border-bottom: none; }
+.rank-num { width: 24px; font-size: 12px; font-weight: 700; color: #9CA3AF; text-align: center; }
+.rank-num.gold { color: #D97706; }
+.rank-num.silver { color: #9CA3AF; }
+.rank-num.bronze { color: #B45309; }
+.rank-name { flex: 1; font-weight: 600; color: var(--navy); font-size: 13px; }
+.rank-trans { font-size: 12px; color: #6B7280; }
+.rank-com { font-size: 13px; font-weight: 700; color: var(--green); }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--navy); color: var(--white); padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999; transform: translateY(100px); opacity: 0; transition: all .3s; }
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.error { background: var(--red); }
+
+/* ── LOADING ── */
+.loading { text-align: center; padding: 3rem; color: #9CA3AF; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; margin-bottom: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CONFIG PAGE ── */
+.config-card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; overflow: hidden; }
+.config-title { font-size: 13px; font-weight: 700; color: var(--navy); padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 1rem 1.25rem; }
+.tag { display: flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--gray-lt); border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--navy); }
+.tag-del { background: none; border: none; cursor: pointer; color: #9CA3AF; font-size: 14px; line-height: 1; padding: 0; }
+.tag-del:hover { color: var(--red); }
+.add-tag-row { display: flex; gap: 8px; padding: 0 1.25rem 1rem; }
+.add-tag-input { flex: 1; padding: 7px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
+.add-tag-input:focus { border-color: var(--blue); }
+.btn-sm { padding: 7px 14px; background: var(--navy); color: var(--white); border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo, .nav-item span, .user-info, .sidebar-logo p { display: none; }
+  .main { margin-left: 60px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .dash-grid2 { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>🏢 Real Aires</h1>
+      <p>Panel de administración — Bienes Raíces</p>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <label>Email</label>
+    <input type="email" id="login-email" placeholder="admin@realaires.com.ar" />
+    <label>Contraseña</label>
+    <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" />
+    <button class="btn-primary" onclick="login()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h2>Real Aires</h2>
+      <p>Panel Admin</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showPage('ventas')" id="nav-ventas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        <span>Operaciones</span>
+      </div>
+      <div class="nav-item" onclick="showPage('alquileres')" id="nav-alquileres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        <span>Alquileres</span>
+      </div>
+      <div class="nav-item" onclick="showPage('asesores')" id="nav-asesores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        <span>Asesores</span>
+      </div>
+      <div class="nav-item" onclick="showPage('config')" id="nav-config">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span>Configuración</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="user-email-display"></div>
+      <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <span style="font-size:12px;color:#9CA3AF;" id="dash-date"></span>
+      </div>
+      <div class="page-content">
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+        <div class="dash-grid2">
+          <div class="table-card">
+            <div class="section-title">Cierre mensual 2026</div>
+            <div id="monthly-list"><div class="loading"><div class="spinner"></div></div></div>
+          </div>
+          <div class="table-card">
+            <div class="section-title">Ranking de asesores</div>
+            <div id="ranking-list"><div class="loading"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VENTAS -->
+    <div class="page" id="page-ventas">
+      <div class="page-header">
+        <h1>Operaciones de Venta</h1>
+        <button class="btn-add" onclick="openModal('ventas')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nueva operación
+        </button>
+      </div>
+      <div class="page-content">
+        <div class="table-card">
+          <div class="table-toolbar">
+            <input class="search-input" placeholder="Buscar inmueble, broker..." oninput="filterVentas()" id="search-ventas" />
+            <select class="filter" onchange="filterVentas()" id="filter-estado">
+              <option value="">Todos los estados</option>
+              <option>En curso</option>
+              <option>Realizada</option>
+              <option>Caida</option>
+            </select>
+            <select class="filter" onchange="filterVentas()" id="filter-asesor-v">
+              <option value="">Todos los asesores</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Inmueble</th>
+                  <th>Estado <span style="color:#1A56DB">↑</span></th>
+                  <th>Broker</th>
+                  <th>Co-broker</th>
+                  <th>Precio salida</th>
+                  <th>Precio cierre</th>
+                  <th>% Var.</th>
+                  <th>Comisión</th>
+                  <th>F. Operación <span style="color:#1A56DB">↓</span></th>
+                  <th>Zona</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="ventas-tbody">
+                <tr><td colspan="11" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALQUILERES -->
+    <div class="page" id="page-alquileres">
+      <div class="page-header">
+        <h1>Alquileres</h1>
+        <button class="btn-add" onclick="openModal('alquileres')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo alquiler
+        </button>
+      </div>
+      <div class="page-content">
+        <div class="table-card">
+          <div class="table-toolbar">
+            <input class="search-input" placeholder="Buscar inmueble..." oninput="filterAlquileres()" id="search-alq" />
+            <select class="filter" onchange="filterAlquileres()" id="filter-tipo">
+              <option value="">Todos los tipos</option>
+              <option>Residencial</option>
+              <option>Comercial</option>
+              <option>Temporal</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Inmueble</th>
+                  <th>Tipo</th>
+                  <th>Broker</th>
+                  <th>Moneda</th>
+                  <th>Precio</th>
+                  <th>%HP</th>
+                  <th>%HI</th>
+                  <th>Estado</th>
+                  <th>Liquidación</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="alq-tbody">
+                <tr><td colspan="10" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ASESORES -->
+    <div class="page" id="page-asesores">
+      <div class="page-header"><h1>Resumen por Asesor</h1></div>
+      <div class="page-content">
+        <div class="table-card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Asesor</th>
+                  <th>Trans. Realizadas</th>
+                  <th>Trans. En Curso</th>
+                  <th>Trans. Caídas</th>
+                  <th>Com. Cobradas</th>
+                  <th>Pipeline</th>
+                  <th>Conv. Rate</th>
+                </tr>
+              </thead>
+              <tbody id="asesores-tbody">
+                <tr><td colspan="8" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div class="page-header"><h1>Configuración</h1></div>
+      <div class="page-content">
+        <div class="config-card">
+          <div class="config-title">
+            Asesores Real Aires
+            <span style="font-size:11px;color:#9CA3AF;font-weight:400;">Los cambios aplican a los dropdowns de toda la app</span>
+          </div>
+          <div class="tag-list" id="asesores-tags"></div>
+          <div class="add-tag-row">
+            <input class="add-tag-input" placeholder="Nombre del asesor..." id="new-asesor-input" onkeydown="if(event.key==='Enter')addAsesor()" />
+            <button class="btn-sm" onclick="addAsesor()">Agregar</button>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-title">Credenciales de Supabase</div>
+          <div style="padding:1rem 1.25rem;font-size:13px;color:#6B7280;line-height:1.7;">
+            Estas credenciales están fijas en el archivo HTML. Para cambiarlas, editá las constantes <code style="background:#F3F4F6;padding:2px 6px;border-radius:4px;">SUPABASE_URL</code> y <code style="background:#F3F4F6;padding:2px 6px;border-radius:4px;">SUPABASE_KEY</code> al principio del script.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL VENTAS -->
+<div class="modal-overlay" id="modal-ventas">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-ventas-title">Nueva Operación</h2>
+      <button class="modal-close" onclick="closeModal('ventas')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="v-id" />
+      <div class="form-grid">
+        <div class="form-group full"><label>Inmueble *</label><input id="v-inmueble" placeholder="Ej: Av. Córdoba 1234 2°B" /></div>
+        <div class="form-group"><label>Estado *</label>
+          <select id="v-estado">
+            <option>En curso</option>
+            <option>Realizada</option>
+            <option>Caida</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Zona</label>
+          <select id="v-zona">
+            <option value="">— seleccionar —</option>
+            <option>CABA</option><option>PBA</option><option>GBA Norte</option><option>GBA Sur</option><option>GBA Oeste</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Broker *</label><select id="v-broker"><option value="">— seleccionar —</option></select></div>
+        <div class="form-group"><label>Compartida con</label><select id="v-cobroker"><option value="">— ninguno —</option></select></div>
+        <div class="form-group"><label>Precio de salida (USD)</label><input type="number" id="v-precio-salida" placeholder="0" /></div>
+        <div class="form-group"><label>Precio de cierre (USD)</label><input type="number" id="v-precio-cierre" placeholder="0" oninput="calcHonorarios()" /></div>
+        <div class="form-group"><label>% Hon. Vendedor (HV)</label><input type="number" id="v-hp" placeholder="3" step="0.1" oninput="calcHonorarios()" /></div>
+        <div class="form-group"><label>% Hon. Comprador (HC)</label><input type="number" id="v-hc" placeholder="3" step="0.1" oninput="calcHonorarios()" /></div>
+        <div class="form-group"><label>$ HV — Hon. Vendedor (USD)</label><input type="number" id="v-php" placeholder="0" oninput="calcComisionTotal()" /></div>
+        <div class="form-group"><label>$ HC — Hon. Comprador (USD)</label><input type="number" id="v-phc" placeholder="0" oninput="calcComisionTotal()" /></div>
+        <div class="form-group"><label>Comisión total (USD)</label><input type="number" id="v-comision" placeholder="0" readonly style="background:#F9FAFB;color:#6B7280;cursor:not-allowed" title="Se calcula automáticamente" /></div>
+        <div class="form-group"><label>Fecha de reserva</label><input type="date" id="v-fecha-reserva" /></div>
+        <div class="form-group"><label>Monto de reserva (USD)</label><input type="number" id="v-mto-reserva" placeholder="0" /></div>
+        <div class="form-group"><label>Fecha de refuerzo</label><input type="date" id="v-fecha-refuerzo" /></div>
+        <div class="form-group"><label>Monto de refuerzo (USD)</label><input type="number" id="v-mto-refuerzo" placeholder="0" /></div>
+        <div class="form-group"><label>Fecha de operación</label><input type="date" id="v-fecha-op" /></div>
+        <div class="form-group"><label>Lugar de firma</label><input id="v-lugar-firma" placeholder="Escribanía..." /></div>
+        <div class="form-group"><label>Boleto / Escritura</label><select id="v-boleto"><option value="">—</option><option>Boleto</option><option>Escritura</option><option>Pendiente</option></select></div>
+        <div class="form-group"><label>Informes</label><select id="v-informes"><option value="">—</option><option>Sí</option><option>No</option><option>Pendiente</option></select></div>
+        <div class="form-group"><label>Liquidación</label><select id="v-liquidacion"><option value="">—</option><option>Pendiente</option><option>Cobrado</option></select></div>
+        <div class="form-group full"><label>Notas</label><textarea id="v-notas" placeholder="Estado del inmueble, observaciones..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('ventas')">Cancelar</button>
+      <button class="btn-save" onclick="saveVenta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALQUILERES -->
+<div class="modal-overlay" id="modal-alquileres">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-alq-title">Nuevo Alquiler</h2>
+      <button class="modal-close" onclick="closeModal('alquileres')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="a-id" />
+      <div class="form-grid">
+        <div class="form-group full"><label>Inmueble *</label><input id="a-inmueble" placeholder="Ej: Bulnes 1234 3°A" /></div>
+        <div class="form-group"><label>Tipo</label>
+          <select id="a-tipo"><option>Residencial</option><option>Comercial</option><option>Temporal</option></select>
+        </div>
+        <div class="form-group"><label>Moneda</label>
+          <select id="a-moneda"><option>ARS</option><option>USD</option></select>
+        </div>
+        <div class="form-group"><label>Precio</label><input type="number" id="a-precio" placeholder="0" /></div>
+        <div class="form-group"><label>Broker *</label><select id="a-broker"><option value="">— seleccionar —</option></select></div>
+        <div class="form-group"><label>Compartida con</label><select id="a-cobroker"><option value="">— ninguno —</option></select></div>
+        <div class="form-group"><label>% HP</label><input type="number" id="a-hp" placeholder="0" step="0.01" /></div>
+        <div class="form-group"><label>% HI</label><input type="number" id="a-hi" placeholder="0" step="0.01" /></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="a-estado"><option>En curso</option><option>Realizada</option><option>Caida</option></select>
+        </div>
+        <div class="form-group"><label>Liquidación</label>
+          <select id="a-liquidacion"><option value="">—</option><option>Pendiente</option><option>Cobrado</option></select>
+        </div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="a-fecha" /></div>
+        <div class="form-group full"><label>Notas</label><textarea id="a-notas" placeholder="Observaciones..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('alquileres')">Cancelar</button>
+      <button class="btn-save" onclick="saveAlquiler()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — REEMPLAZAR CON TUS CREDENCIALES DE SUPABASE
+// ══════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://yjfleshetpwdyoyeciaf.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqZmxlc2hldHB3ZHlveWVjaWFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMzQ3MDEsImV4cCI6MjA5NzkxMDcwMX0.gQG5oK5MfpXr_lj8dHU-_elJq1-9t3SDCv5YO-PmH5M'
+// ══════════════════════════════════════════════════════════════════
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+let ventasData = []
+let alqData    = []
+let asesoresList = []
+let currentUser = null
+
+// ── AUTH ──────────────────────────────────────────────────────────
+async function login() {
+  const email = document.getElementById('login-email').value.trim()
+  const pass  = document.getElementById('login-pass').value
+  const errEl = document.getElementById('auth-error')
+  errEl.style.display = 'none'
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass })
+  if (error) {
+    errEl.textContent = 'Email o contraseña incorrectos'
+    errEl.style.display = 'block'
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut()
+  document.getElementById('app').style.display = 'none'
+  document.getElementById('auth-screen').style.display = 'flex'
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    currentUser = session.user
+    document.getElementById('auth-screen').style.display = 'none'
+    document.getElementById('app').style.display = 'block'
+    document.getElementById('user-email-display').textContent = session.user.email
+    document.getElementById('dash-date').textContent = new Date().toLocaleDateString('es-AR', {day:'numeric',month:'long',year:'numeric'})
+    initApp()
+  }
+})
+
+// ── INIT ──────────────────────────────────────────────────────────
+async function initApp() {
+  await loadAsesores()
+  loadVentas()
+  loadAlquileres()
+  loadDashboard()
+  loadAsesoresPage()
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  document.getElementById('page-'+name).classList.add('active')
+  document.getElementById('nav-'+name).classList.add('active')
+  if (name === 'dashboard') loadDashboard()
+  if (name === 'asesores') loadAsesoresPage()
+  if (name === 'config') loadConfig()
+}
+
+// ── COMISIONES POR ASESOR ─────────────────────────────────────────
+// Reglas (siempre sobre comision_total):
+// - Sin cobroker, o broker === cobroker (auto-deal): 100% al broker
+// - Compartida con asesor interno RA: 50% para cada uno
+// - Compartida con externo: 100% al broker RA, 0 al externo
+
+function comAsesor(r, nombre, raSet) {
+  const broker   = r.broker   || ''
+  const cobroker = r.cobroker || ''
+  const total    = r.comision_total || 0
+  const esBroker   = broker === nombre
+  const esCobroker = cobroker === nombre && cobroker !== broker
+
+  if (!esBroker && !esCobroker) return 0
+  if (!total) return 0
+
+  // Auto-deal o sin cobroker: 100% al broker
+  if (!cobroker || broker === cobroker) {
+    return esBroker ? total : 0
+  }
+
+  // Compartida con interno RA: 50/50
+  if (raSet.has(cobroker)) {
+    return total / 2
+  }
+
+  // Compartida con externo: 100% al broker RA
+  return esBroker ? total : 0
+}
+
+// ── ASESORES LIST ─────────────────────────────────────────────────
+async function loadAsesores() {
+  const { data } = await sb.from('asesores').select('*').order('nombre')
+  asesoresList = data || []
+  populateAsesorDropdowns()
+}
+
+function populateAsesorDropdowns() {
+  const ids = ['v-broker','v-cobroker','a-broker','a-cobroker','filter-asesor-v']
+  ids.forEach(id => {
+    const sel = document.getElementById(id)
+    if (!sel) return
+    const first = sel.options[0]
+    sel.innerHTML = ''
+    sel.appendChild(first)
+    asesoresList.forEach(a => {
+      const opt = document.createElement('option')
+      opt.value = a.nombre; opt.textContent = a.nombre
+      sel.appendChild(opt)
+    })
+  })
+}
+
+// ── VENTAS ────────────────────────────────────────────────────────
+const ESTADO_ORDER = { 'En curso': 0, 'Realizada': 1, 'Caida': 2 }
+
+async function loadVentas() {
+  const { data } = await sb.from('ventas').select('*')
+  ventasData = sortVentas(data || [])
+  renderVentas(ventasData)
+}
+
+function sortVentas(rows) {
+  return [...rows].sort((a, b) => {
+    // 1° por estado: En curso → Realizada → Caída
+    const eA = ESTADO_ORDER[a.estado] ?? 9
+    const eB = ESTADO_ORDER[b.estado] ?? 9
+    if (eA !== eB) return eA - eB
+    // 2° por fecha de operación: más reciente primero (nulls al final)
+    const dA = a.fecha_op ? new Date(a.fecha_op) : null
+    const dB = b.fecha_op ? new Date(b.fecha_op) : null
+    if (!dA && !dB) return 0
+    if (!dA) return 1
+    if (!dB) return -1
+    return dB - dA
+  })
+}
+
+function renderVentas(rows) {
+  const tb = document.getElementById('ventas-tbody')
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="11" class="table-empty">No hay operaciones. Agregá la primera.</td></tr>'; return }
+  tb.innerHTML = rows.map(r => {
+    const variacion = r.precio_cierre && r.precio_salida ? ((r.precio_cierre - r.precio_salida) / r.precio_salida * 100).toFixed(1) : '—'
+    const varColor = !r.precio_cierre ? '' : (r.precio_cierre >= r.precio_salida ? 'color:#16A34A' : 'color:#DC2626')
+    const varTxt = r.precio_cierre && r.precio_salida ? `<span style="${varColor}">${variacion}%</span>` : '—'
+    return `<tr>
+      <td style="font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.inmueble||''}</td>
+      <td><span class="badge ${estadoClass(r.estado)}"><span class="badge-dot"></span>${r.estado||''}</span></td>
+      <td>${r.broker||'—'}</td>
+      <td style="color:#6B7280">${r.cobroker||'—'}</td>
+      <td>${r.precio_salida ? 'USD '+r.precio_salida.toLocaleString('es-AR') : '—'}</td>
+      <td>${r.precio_cierre ? 'USD '+r.precio_cierre.toLocaleString('es-AR') : '—'}</td>
+      <td>${varTxt}</td>
+      <td style="font-weight:600">${r.comision_total ? 'USD '+r.comision_total.toLocaleString('es-AR') : '—'}</td>
+      <td style="color:#6B7280">${formatDate(r.fecha_op)}</td>
+      <td style="color:#6B7280">${r.zona||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="action-btn" onclick='editVenta(${JSON.stringify(r)})'>Editar</button>
+        <button class="action-btn del" onclick="deleteVenta(${r.id})">✕</button>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+function filterVentas() {
+  const q = document.getElementById('search-ventas').value.toLowerCase()
+  const st = document.getElementById('filter-estado').value
+  const as = document.getElementById('filter-asesor-v').value
+  const filtered = ventasData.filter(r =>
+    (!q || (r.inmueble||'').toLowerCase().includes(q) || (r.broker||'').toLowerCase().includes(q)) &&
+    (!st || r.estado === st) &&
+    (!as || r.broker === as || r.cobroker === as)
+  )
+  renderVentas(filtered)
+}
+
+// Convierte 'YYYY-MM-DD' a Date local evitando el desfase UTC
+function parseLocalDate(str) {
+  if (!str) return null
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+function formatDate(str) {
+  if (!str) return '—'
+  const d = parseLocalDate(str)
+  return d.toLocaleDateString('es-AR')
+}
+function estadoClass(e) {
+  if (e === 'Realizada') return 'realizada'
+  if (e === 'En curso')  return 'en-curso'
+  if (e === 'Caida')     return 'caida'
+  return ''
+}
+
+function openModal(type) {
+  if (type === 'ventas') {
+    document.getElementById('v-id').value = ''
+    document.getElementById('modal-ventas-title').textContent = 'Nueva Operación'
+    ;['v-inmueble','v-lugar-firma','v-notas'].forEach(id => document.getElementById(id).value = '')
+    ;['v-precio-salida','v-precio-cierre','v-hp','v-hc','v-php','v-phc','v-comision','v-mto-reserva','v-mto-refuerzo'].forEach(id => document.getElementById(id).value = '')
+    ;['v-fecha-reserva','v-fecha-refuerzo','v-fecha-op'].forEach(id => document.getElementById(id).value = '')
+    ;['v-estado','v-zona','v-broker','v-cobroker','v-boleto','v-informes','v-liquidacion'].forEach(id => document.getElementById(id).selectedIndex = 0)  } else {
+    document.getElementById('a-id').value = ''
+    document.getElementById('modal-alq-title').textContent = 'Nuevo Alquiler'
+    ;['a-inmueble','a-notas'].forEach(id => document.getElementById(id).value = '')
+    ;['a-precio','a-hp','a-hi'].forEach(id => document.getElementById(id).value = '')
+    document.getElementById('a-fecha').value = ''
+    ;['a-tipo','a-moneda','a-broker','a-cobroker','a-estado','a-liquidacion'].forEach(id => document.getElementById(id).selectedIndex = 0)
+  }
+  document.getElementById('modal-'+type).classList.add('open')
+}
+
+function closeModal(type) { document.getElementById('modal-'+type).classList.remove('open') }
+
+function editVenta(r) {
+  document.getElementById('modal-ventas-title').textContent = 'Editar Operación'
+  document.getElementById('v-id').value = r.id
+  document.getElementById('v-inmueble').value = r.inmueble||''
+  document.getElementById('v-estado').value = r.estado||'En curso'
+  document.getElementById('v-zona').value = r.zona||''
+  // broker/cobroker: solo asignar si existe la opción en el select
+  const setBroker = (id, val) => {
+    const sel = document.getElementById(id)
+    const exists = val && Array.from(sel.options).some(o => o.value === val)
+    sel.value = exists ? val : ''
+  }
+  setBroker('v-broker',   r.broker)
+  setBroker('v-cobroker', r.cobroker)
+  document.getElementById('v-precio-salida').value = r.precio_salida||''
+  document.getElementById('v-precio-cierre').value = r.precio_cierre||''
+  document.getElementById('v-hp').value = r.pct_hp||''
+  document.getElementById('v-hc').value = r.pct_hc||''
+  document.getElementById('v-php').value = r.usd_hp||''
+  document.getElementById('v-phc').value = r.usd_hc||''
+  document.getElementById('v-comision').value = r.comision_total||''
+  document.getElementById('v-fecha-reserva').value = r.fecha_reserva||''
+  document.getElementById('v-mto-reserva').value = r.monto_reserva||''
+  document.getElementById('v-fecha-refuerzo').value = r.fecha_refuerzo||''
+  document.getElementById('v-mto-refuerzo').value = r.monto_refuerzo||''
+  document.getElementById('v-fecha-op').value = r.fecha_op||''
+  document.getElementById('v-lugar-firma').value = r.lugar_firma||''
+  document.getElementById('v-boleto').value = r.boleto_escritura||''
+  document.getElementById('v-informes').value = r.informes||''
+  document.getElementById('v-liquidacion').value = r.liquidacion||''
+  document.getElementById('v-notas').value = r.notas||''
+  document.getElementById('modal-ventas').classList.add('open')
+}
+
+// ── CÁLCULO AUTOMÁTICO DE HONORARIOS ─────────────────────────────
+function calcHonorarios() {
+  const cierre = parseFloat(document.getElementById('v-precio-cierre').value) || 0
+  const pctHV  = parseFloat(document.getElementById('v-hp').value) || 0
+  const pctHC  = parseFloat(document.getElementById('v-hc').value) || 0
+  if (cierre > 0) {
+    if (pctHV > 0) document.getElementById('v-php').value = (cierre * pctHV / 100).toFixed(0)
+    if (pctHC > 0) document.getElementById('v-phc').value = (cierre * pctHC / 100).toFixed(0)
+  }
+  calcComisionTotal()
+}
+
+function calcComisionTotal() {
+  const hv = parseFloat(document.getElementById('v-php').value) || 0
+  const hc = parseFloat(document.getElementById('v-phc').value) || 0
+  if (hv > 0 || hc > 0) {
+    document.getElementById('v-comision').value = (hv + hc).toFixed(0)
+  }
+}
+
+async function saveVenta() {
+  const inmueble = document.getElementById('v-inmueble').value.trim()
+  if (!inmueble) { toast('El inmueble es obligatorio', true); return }
+  const row = {
+    inmueble,
+    estado:          document.getElementById('v-estado').value,
+    zona:            document.getElementById('v-zona').value||null,
+    broker:          document.getElementById('v-broker').value||null,
+    cobroker:        document.getElementById('v-cobroker').value||null,
+    precio_salida:   parseFloat(document.getElementById('v-precio-salida').value)||null,
+    precio_cierre:   parseFloat(document.getElementById('v-precio-cierre').value)||null,
+    pct_hp:          parseFloat(document.getElementById('v-hp').value)||null,
+    pct_hc:          parseFloat(document.getElementById('v-hc').value)||null,
+    usd_hp:          parseFloat(document.getElementById('v-php').value)||null,
+    usd_hc:          parseFloat(document.getElementById('v-phc').value)||null,
+    comision_total:  parseFloat(document.getElementById('v-comision').value)||null,
+    fecha_reserva:   document.getElementById('v-fecha-reserva').value||null,
+    monto_reserva:   parseFloat(document.getElementById('v-mto-reserva').value)||null,
+    fecha_refuerzo:  document.getElementById('v-fecha-refuerzo').value||null,
+    monto_refuerzo:  parseFloat(document.getElementById('v-mto-refuerzo').value)||null,
+    fecha_op:        document.getElementById('v-fecha-op').value||null,
+    lugar_firma:     document.getElementById('v-lugar-firma').value||null,
+    boleto_escritura:document.getElementById('v-boleto').value||null,
+    informes:        document.getElementById('v-informes').value||null,
+    liquidacion:     document.getElementById('v-liquidacion').value||null,
+    notas:           document.getElementById('v-notas').value||null,
+  }
+  const id = document.getElementById('v-id').value
+  const { error } = id
+    ? await sb.from('ventas').update(row).eq('id', id)
+    : await sb.from('ventas').insert(row)
+  if (error) { toast('Error al guardar: '+error.message, true); return }
+  closeModal('ventas')
+  toast(id ? 'Operación actualizada' : 'Operación creada')
+  loadVentas()
+  loadDashboard()
+  loadAsesoresPage()
+}
+
+async function deleteVenta(id) {
+  if (!confirm('¿Eliminar esta operación?')) return
+  await sb.from('ventas').delete().eq('id', id)
+  toast('Operación eliminada')
+  loadVentas()
+  loadDashboard()
+  loadAsesoresPage()
+}
+
+// ── ALQUILERES ────────────────────────────────────────────────────
+async function loadAlquileres() {
+  const { data } = await sb.from('alquileres').select('*').order('created_at', {ascending:false})
+  alqData = data || []
+  renderAlquileres(alqData)
+}
+
+function renderAlquileres(rows) {
+  const tb = document.getElementById('alq-tbody')
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="table-empty">No hay alquileres registrados.</td></tr>'; return }
+  tb.innerHTML = rows.map(r => `<tr>
+    <td style="font-weight:600">${r.inmueble||''}</td>
+    <td>${r.tipo||'—'}</td>
+    <td>${r.broker||'—'}</td>
+    <td><span style="font-size:11px;font-weight:700;background:#F3F4F6;padding:2px 8px;border-radius:4px">${r.moneda||'ARS'}</span></td>
+    <td>${r.precio ? (r.moneda==='USD'?'USD ':'$')+Number(r.precio).toLocaleString('es-AR') : '—'}</td>
+    <td>${r.pct_hp != null ? r.pct_hp+'%' : '—'}</td>
+    <td>${r.pct_hi != null ? r.pct_hi+'%' : '—'}</td>
+    <td><span class="badge ${estadoClass(r.estado)}"><span class="badge-dot"></span>${r.estado||''}</span></td>
+    <td>${r.liquidacion||'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="action-btn" onclick='editAlquiler(${JSON.stringify(r)})'>Editar</button>
+      <button class="action-btn del" onclick="deleteAlquiler(${r.id})">✕</button>
+    </td>
+  </tr>`).join('')
+}
+
+function filterAlquileres() {
+  const q = document.getElementById('search-alq').value.toLowerCase()
+  const t = document.getElementById('filter-tipo').value
+  renderAlquileres(alqData.filter(r =>
+    (!q || (r.inmueble||'').toLowerCase().includes(q)) &&
+    (!t || r.tipo === t)
+  ))
+}
+
+function editAlquiler(r) {
+  document.getElementById('modal-alq-title').textContent = 'Editar Alquiler'
+  document.getElementById('a-id').value = r.id
+  document.getElementById('a-inmueble').value = r.inmueble||''
+  document.getElementById('a-tipo').value = r.tipo||'Residencial'
+  document.getElementById('a-moneda').value = r.moneda||'ARS'
+  document.getElementById('a-precio').value = r.precio||''
+  document.getElementById('a-broker').value = r.broker||''
+  document.getElementById('a-cobroker').value = r.cobroker||''
+  document.getElementById('a-hp').value = r.pct_hp||''
+  document.getElementById('a-hi').value = r.pct_hi||''
+  document.getElementById('a-estado').value = r.estado||'En curso'
+  document.getElementById('a-liquidacion').value = r.liquidacion||''
+  document.getElementById('a-fecha').value = r.fecha||''
+  document.getElementById('a-notas').value = r.notas||''
+  document.getElementById('modal-alquileres').classList.add('open')
+}
+
+async function saveAlquiler() {
+  const inmueble = document.getElementById('a-inmueble').value.trim()
+  if (!inmueble) { toast('El inmueble es obligatorio', true); return }
+  const row = {
+    inmueble,
+    tipo:       document.getElementById('a-tipo').value,
+    moneda:     document.getElementById('a-moneda').value,
+    precio:     parseFloat(document.getElementById('a-precio').value)||null,
+    broker:     document.getElementById('a-broker').value||null,
+    cobroker:   document.getElementById('a-cobroker').value||null,
+    pct_hp:     parseFloat(document.getElementById('a-hp').value)||null,
+    pct_hi:     parseFloat(document.getElementById('a-hi').value)||null,
+    estado:     document.getElementById('a-estado').value,
+    liquidacion:document.getElementById('a-liquidacion').value||null,
+    fecha:      document.getElementById('a-fecha').value||null,
+    notas:      document.getElementById('a-notas').value||null,
+  }
+  const id = document.getElementById('a-id').value
+  const { error } = id
+    ? await sb.from('alquileres').update(row).eq('id', id)
+    : await sb.from('alquileres').insert(row)
+  if (error) { toast('Error: '+error.message, true); return }
+  closeModal('alquileres')
+  toast(id ? 'Alquiler actualizado' : 'Alquiler creado')
+  loadAlquileres()
+}
+
+async function deleteAlquiler(id) {
+  if (!confirm('¿Eliminar este alquiler?')) return
+  await sb.from('alquileres').delete().eq('id', id)
+  toast('Alquiler eliminado')
+  loadAlquileres()
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────
+async function loadDashboard() {
+  const { data: ventas } = await sb.from('ventas').select('*')
+  const { data: alqs }   = await sb.from('alquileres').select('id')
+  const v = ventas || []
+  const realizadas = v.filter(r => r.estado === 'Realizada')
+  const enCurso    = v.filter(r => r.estado === 'En curso')
+  const caidas     = v.filter(r => r.estado === 'Caida')
+  const totalCob   = realizadas.reduce((s,r) => s+(r.comision_total||0), 0)
+  const pipeline   = enCurso.reduce((s,r) => s+(r.comision_total||0), 0)
+  const tasa       = realizadas.length+caidas.length > 0
+    ? Math.round(realizadas.length/(realizadas.length+caidas.length)*100) : 0
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card blue"><div class="kpi-label">En curso</div><div class="kpi-value">${enCurso.length}</div><div class="kpi-sub">operaciones activas</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Realizadas</div><div class="kpi-value">${realizadas.length}</div><div class="kpi-sub">operaciones cerradas</div></div>
+    <div class="kpi-card orange"><div class="kpi-label">Com. cobradas</div><div class="kpi-value" style="font-size:18px">USD ${totalCob.toLocaleString('es-AR')}</div><div class="kpi-sub">Pipeline: USD ${pipeline.toLocaleString('es-AR')}</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Conversión</div><div class="kpi-value">${tasa}%</div><div class="kpi-sub">${alqs?.length||0} alquileres activos</div></div>
+  `
+
+  // Monthly 2026
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+  const now = new Date()
+  const monthly = meses.map((mes, idx) => {
+    const m = idx+1
+    const ops = realizadas.filter(r => {
+      if (!r.fecha_op) return false
+      const d = parseLocalDate(r.fecha_op)
+      return d.getFullYear()===2026 && d.getMonth()===idx
+    })
+    return { mes, m, ops: ops.length, com: ops.reduce((s,r)=>s+(r.comision_total||0),0) }
+  })
+  const maxOps = Math.max(...monthly.map(m=>m.ops), 1)
+  document.getElementById('monthly-list').innerHTML = monthly.map(m => {
+    const isCurrent = now.getFullYear()===2026 && now.getMonth()===(m.m-1)
+    const barW = Math.round(m.ops/maxOps*100)
+    return `<div class="monthly-row${isCurrent?' current-month':''}">
+      <div class="monthly-mes">${m.mes}</div>
+      <div class="monthly-bar-wrap"><div class="monthly-bar${isCurrent?' current':''}" style="width:${barW}%"></div></div>
+      <div class="monthly-ops">${m.ops||''}</div>
+      <div class="monthly-com">${m.com ? 'USD '+m.com.toLocaleString('es-AR') : ''}</div>
+    </div>`
+  }).join('')
+
+  // Ranking
+  const raSet = new Set(asesoresList.map(a => a.nombre))
+  const asesorStats = {}
+  v.forEach(r => {
+    const involucrados = new Set()
+    if (r.broker   && raSet.has(r.broker))                              involucrados.add(r.broker)
+    if (r.cobroker && raSet.has(r.cobroker) && r.cobroker !== r.broker) involucrados.add(r.cobroker)
+
+    involucrados.forEach(b => {
+      if (!asesorStats[b]) asesorStats[b] = {real:0,cur:0,com:0,pipe:0}
+      const com = comAsesor(r, b, raSet)
+      if (r.estado==='Realizada') { asesorStats[b].real++; asesorStats[b].com  += com }
+      if (r.estado==='En curso')  { asesorStats[b].cur++;  asesorStats[b].pipe += com }
+    })
+  })
+  const ranked = Object.entries(asesorStats)
+    .filter(([n]) => asesoresList.some(a => a.nombre===n))
+    .sort((a,b) => b[1].com - a[1].com)
+    .slice(0,10)
+  const medals = ['🥇','🥈','🥉']
+  document.getElementById('ranking-list').innerHTML = ranked.map(([nombre,s],i) => `
+    <div class="asesor-rank">
+      <div class="rank-num ${i<3?['gold','silver','bronze'][i]:''}">${i<3?medals[i]:i+1}</div>
+      <div class="rank-name">${nombre}</div>
+      <div class="rank-trans" style="margin-right:8px">${s.real} ops</div>
+      <div class="rank-com">USD ${s.com.toLocaleString('es-AR')}</div>
+    </div>
+  `).join('') || '<div class="table-empty">Sin datos todavía</div>'
+}
+
+// ── ASESORES PAGE ─────────────────────────────────────────────────
+async function loadAsesoresPage() {
+  const { data: ventas } = await sb.from('ventas').select('*')
+  const v = ventas || []
+  const realizadas = v.filter(r=>r.estado==='Realizada')
+  const enCurso    = v.filter(r=>r.estado==='En curso')
+  const caidas     = v.filter(r=>r.estado==='Caida')
+
+  const raSet2 = new Set(asesoresList.map(a => a.nombre))
+  const stats = {}
+  asesoresList.forEach(a => { stats[a.nombre] = {real:0,cur:0,cai:0,com:0,pipe:0} })
+  v.forEach(r => {
+    // Armar set de asesores RA involucrados en esta operación (sin duplicar)
+    const involucrados = new Set()
+    if (r.broker   && stats[r.broker])                          involucrados.add(r.broker)
+    if (r.cobroker && stats[r.cobroker] && r.cobroker !== r.broker) involucrados.add(r.cobroker)
+
+    involucrados.forEach(b => {
+      const com = comAsesor(r, b, raSet2)
+      if (r.estado==='Realizada') { stats[b].real++; stats[b].com  += com }
+      if (r.estado==='En curso')  { stats[b].cur++;  stats[b].pipe += com }
+      if (r.estado==='Caida')     { stats[b].cai++ }
+    })
+  })
+
+  const sorted = Object.entries(stats).sort((a,b)=>b[1].com-a[1].com)
+  const tb = document.getElementById('asesores-tbody')
+  tb.innerHTML = sorted.map(([nombre,s],i) => {
+    const total = s.real+s.cai
+    const conv = total>0 ? Math.round(s.real/total*100)+'%' : '—'
+    return `<tr>
+      <td style="font-weight:700;color:#9CA3AF;text-align:center">${i+1}</td>
+      <td style="font-weight:600">${nombre}</td>
+      <td style="text-align:center;font-weight:700;color:#16A34A">${s.real}</td>
+      <td style="text-align:center;color:#EA580C">${s.cur}</td>
+      <td style="text-align:center;color:#DC2626">${s.cai}</td>
+      <td style="font-weight:700;color:#16A34A">${s.com?'USD '+s.com.toLocaleString('es-AR'):'—'}</td>
+      <td style="color:#6B7280">${s.pipe?'USD '+s.pipe.toLocaleString('es-AR'):'—'}</td>
+      <td style="text-align:center;font-weight:600">${conv}</td>
+    </tr>`
+  }).join('')
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────
+async function loadConfig() {
+  await loadAsesores()
+  const container = document.getElementById('asesores-tags')
+  container.innerHTML = asesoresList.map(a => `
+    <span class="tag">${a.nombre}
+      <button class="tag-del" onclick="deleteAsesor(${a.id},'${a.nombre.replace(/'/g,"\\'")}')">×</button>
+    </span>
+  `).join('')
+}
+
+async function addAsesor() {
+  const nombre = document.getElementById('new-asesor-input').value.trim()
+  if (!nombre) return
+  const { error } = await sb.from('asesores').insert({ nombre })
+  if (error) { toast('Error: '+error.message, true); return }
+  document.getElementById('new-asesor-input').value = ''
+  toast('Asesor agregado')
+  loadConfig()
+}
+
+async function deleteAsesor(id, nombre) {
+  if (!confirm(`¿Eliminar a ${nombre} del listado?`)) return
+  await sb.from('asesores').delete().eq('id', id)
+  toast('Asesor eliminado')
+  loadConfig()
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+function toast(msg, err=false) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = 'show' + (err?' error':'')
+  setTimeout(()=>{ t.className='' }, 3000)
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open') })
+})
+</script>
+</body>
+</html>
