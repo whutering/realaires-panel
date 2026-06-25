@@ -300,14 +300,14 @@ tr:hover td { background: #FAFBFC; }
               <thead>
                 <tr>
                   <th>Inmueble</th>
-                  <th>Estado</th>
+                  <th>Estado <span style="color:#1A56DB">↑</span></th>
                   <th>Broker</th>
                   <th>Co-broker</th>
                   <th>Precio salida</th>
                   <th>Precio cierre</th>
                   <th>% Var.</th>
                   <th>Comisión</th>
-                  <th>F. Operación</th>
+                  <th>F. Operación <span style="color:#1A56DB">↓</span></th>
                   <th>Zona</th>
                   <th></th>
                 </tr>
@@ -579,6 +579,50 @@ function showPage(name) {
   if (name === 'config') loadConfig()
 }
 
+// ── COMISIONES POR ASESOR ─────────────────────────────────────────
+// Reglas:
+// 1. Si existen usd_hp / usd_hc los usamos directamente (dato más preciso)
+// 2. Si no existen, usamos comision_total con estas reglas:
+//    - Operación propia (broker === cobroker, o sin cobroker): 100% al broker
+//    - Operación compartida entre dos asesores distintos: 50% a cada uno
+// 3. Co-brokers externos (no están en asesoresList) no se cuentan
+
+function comAsesor(r, nombre, raSet) {
+  const broker   = r.broker   || ''
+  const cobroker = r.cobroker || ''
+  const total    = r.comision_total || 0
+  const hp       = r.usd_hp != null ? r.usd_hp : null
+  const hc       = r.usd_hc != null ? r.usd_hc : null
+  const esBroker   = broker === nombre
+  const esCobroker = cobroker === nombre && cobroker !== broker
+  const compartidaConRA = cobroker && raSet.has(cobroker) && cobroker !== broker
+
+  if (!esBroker && !esCobroker) return 0
+
+  // Caso 1: tiene los campos individuales cargados
+  if (hp !== null || hc !== null) {
+    let com = 0
+    if (esBroker)   com += hp || 0
+    if (esCobroker) com += hc || 0
+    // auto-deal: broker y cobroker son el mismo
+    if (broker === cobroker && esBroker) com = (hp || 0) + (hc || 0)
+    return com
+  }
+
+  // Caso 2: solo hay comision_total
+  if (!total) return 0
+  if (!cobroker || broker === cobroker) {
+    // operación propia: todo para el broker
+    return esBroker ? total : 0
+  }
+  if (compartidaConRA) {
+    // compartida entre dos asesores RA: 50/50
+    return total / 2
+  }
+  // compartida con externo: 100% al broker RA
+  return esBroker ? total : 0
+}
+
 // ── ASESORES LIST ─────────────────────────────────────────────────
 async function loadAsesores() {
   const { data } = await sb.from('asesores').select('*').order('nombre')
@@ -603,10 +647,28 @@ function populateAsesorDropdowns() {
 }
 
 // ── VENTAS ────────────────────────────────────────────────────────
+const ESTADO_ORDER = { 'En curso': 0, 'Realizada': 1, 'Caida': 2 }
+
 async function loadVentas() {
-  const { data } = await sb.from('ventas').select('*').order('created_at', {ascending:false})
-  ventasData = data || []
+  const { data } = await sb.from('ventas').select('*')
+  ventasData = sortVentas(data || [])
   renderVentas(ventasData)
+}
+
+function sortVentas(rows) {
+  return [...rows].sort((a, b) => {
+    // 1° por estado: En curso → Realizada → Caída
+    const eA = ESTADO_ORDER[a.estado] ?? 9
+    const eB = ESTADO_ORDER[b.estado] ?? 9
+    if (eA !== eB) return eA - eB
+    // 2° por fecha de operación: más reciente primero (nulls al final)
+    const dA = a.fecha_op ? new Date(a.fecha_op) : null
+    const dB = b.fecha_op ? new Date(b.fecha_op) : null
+    if (!dA && !dB) return 0
+    if (!dA) return 1
+    if (!dB) return -1
+    return dB - dA
+  })
 }
 
 function renderVentas(rows) {
@@ -625,7 +687,7 @@ function renderVentas(rows) {
       <td>${r.precio_cierre ? 'USD '+r.precio_cierre.toLocaleString('es-AR') : '—'}</td>
       <td>${varTxt}</td>
       <td style="font-weight:600">${r.comision_total ? 'USD '+r.comision_total.toLocaleString('es-AR') : '—'}</td>
-      <td style="color:#6B7280">${r.fecha_op ? new Date(r.fecha_op).toLocaleDateString('es-AR') : '—'}</td>
+      <td style="color:#6B7280">${formatDate(r.fecha_op)}</td>
       <td style="color:#6B7280">${r.zona||'—'}</td>
       <td style="white-space:nowrap">
         <button class="action-btn" onclick='editVenta(${JSON.stringify(r)})'>Editar</button>
@@ -639,14 +701,26 @@ function filterVentas() {
   const q = document.getElementById('search-ventas').value.toLowerCase()
   const st = document.getElementById('filter-estado').value
   const as = document.getElementById('filter-asesor-v').value
-  renderVentas(ventasData.filter(r =>
+  const filtered = ventasData.filter(r =>
     (!q || (r.inmueble||'').toLowerCase().includes(q) || (r.broker||'').toLowerCase().includes(q)) &&
     (!st || r.estado === st) &&
     (!as || r.broker === as || r.cobroker === as)
-  ))
+  )
+  renderVentas(filtered)
 }
 
-function estadoClass(e) {
+// Convierte 'YYYY-MM-DD' a Date local evitando el desfase UTC
+function parseLocalDate(str) {
+  if (!str) return null
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+function formatDate(str) {
+  if (!str) return '—'
+  const d = parseLocalDate(str)
+  return d.toLocaleDateString('es-AR')
+}
   if (e === 'Realizada') return 'realizada'
   if (e === 'En curso')  return 'en-curso'
   if (e === 'Caida')     return 'caida'
@@ -865,7 +939,7 @@ async function loadDashboard() {
     const m = idx+1
     const ops = realizadas.filter(r => {
       if (!r.fecha_op) return false
-      const d = new Date(r.fecha_op)
+      const d = parseLocalDate(r.fecha_op)
       return d.getFullYear()===2026 && d.getMonth()===idx
     })
     return { mes, m, ops: ops.length, com: ops.reduce((s,r)=>s+(r.comision_total||0),0) }
@@ -883,14 +957,22 @@ async function loadDashboard() {
   }).join('')
 
   // Ranking
+  const raSet = new Set(asesoresList.map(a => a.nombre))
   const asesorStats = {}
   v.forEach(r => {
-    [r.broker, r.cobroker].forEach((b,bi) => {
-      if (!b) return
+    [r.broker, r.cobroker].forEach(b => {
+      if (!b || !raSet.has(b)) return
       if (!asesorStats[b]) asesorStats[b] = {real:0,cur:0,com:0,pipe:0}
-      if (r.estado==='Realizada') { asesorStats[b].real++; asesorStats[b].com += bi===0?(r.usd_hp||0):(r.usd_hc||0) }
-      if (r.estado==='En curso')  { asesorStats[b].cur++;  asesorStats[b].pipe += bi===0?(r.usd_hp||0):(r.usd_hc||0) }
+      const com = comAsesor(r, b, raSet)
+      if (r.estado==='Realizada') { asesorStats[b].real++; asesorStats[b].com += com }
+      if (r.estado==='En curso')  { asesorStats[b].cur++;  asesorStats[b].pipe += com }
     })
+    // evitar contar dos veces si broker===cobroker
+    if (r.broker && r.broker === r.cobroker && raSet.has(r.broker)) {
+      const b = r.broker
+      if (r.estado==='Realizada') asesorStats[b].real--
+      if (r.estado==='En curso')  asesorStats[b].cur--
+    }
   })
   const ranked = Object.entries(asesorStats)
     .filter(([n]) => asesoresList.some(a => a.nombre===n))
@@ -915,16 +997,28 @@ async function loadAsesoresPage() {
   const enCurso    = v.filter(r=>r.estado==='En curso')
   const caidas     = v.filter(r=>r.estado==='Caida')
 
+  const raSet2 = new Set(asesoresList.map(a => a.nombre))
   const stats = {}
   asesoresList.forEach(a => { stats[a.nombre] = {real:0,cur:0,cai:0,com:0,pipe:0} })
   v.forEach(r => {
-    [[r.broker,'hp'],[r.cobroker,'hc']].forEach(([b,side]) => {
-      if (!b || !stats[b]) return
-      const com = side==='hp'?(r.usd_hp||0):(r.usd_hc||0)
-      if (r.estado==='Realizada') { stats[b].real++; stats[b].com+=com }
-      if (r.estado==='En curso')  { stats[b].cur++;  stats[b].pipe+=com }
+    const involucrados = new Set()
+    if (r.broker   && stats[r.broker])   involucrados.add(r.broker)
+    if (r.cobroker && stats[r.cobroker] && r.cobroker !== r.broker) involucrados.add(r.cobroker)
+
+    involucrados.forEach(b => {
+      const com = comAsesor(r, b, raSet2)
+      if (r.estado==='Realizada') { stats[b].real++; stats[b].com  += com }
+      if (r.estado==='En curso')  { stats[b].cur++;  stats[b].pipe += com }
       if (r.estado==='Caida')     { stats[b].cai++ }
     })
+    // auto-deal: broker === cobroker, contar una sola vez
+    if (r.broker && r.broker === r.cobroker && stats[r.broker]) {
+      const b = r.broker
+      const com = comAsesor(r, b, raSet2)
+      if (r.estado==='Realizada') { stats[b].real++; stats[b].com  += com }
+      if (r.estado==='En curso')  { stats[b].cur++;  stats[b].pipe += com }
+      if (r.estado==='Caida')     { stats[b].cai++ }
+    }
   })
 
   const sorted = Object.entries(stats).sort((a,b)=>b[1].com-a[1].com)
