@@ -1,0 +1,42 @@
+name: Carga Histórica ZP Index (una vez)
+
+on:
+  workflow_dispatch:
+    inputs:
+      desde:
+        description: 'Mes inicial (YYYY-MM)'
+        required: false
+        default: '2020-01'
+      hasta:
+        description: 'Mes final (YYYY-MM, vacío = mes anterior al actual)'
+        required: false
+        default: ''
+
+jobs:
+  carga-historica:
+    name: Cargar histórico ZP Index
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install -r scrapers/requirements.txt
+
+      - name: Correr carga histórica
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          ARGS="--desde ${{ github.event.inputs.desde }}"
+          if [ -n "${{ github.event.inputs.hasta }}" ]; then
+            ARGS="$ARGS --hasta ${{ github.event.inputs.hasta }}"
+          fi
+          python scrapers/scraper_zpindex_historico.py $ARGS
