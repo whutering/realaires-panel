@@ -1,0 +1,73 @@
+name: Scraper Escrituras Mensual
+
+on:
+  schedule:
+    # Escrituras CABA y PBA: días 22-26 de cada mes a las 12:00 UTC (09:00 Argentina)
+    - cron: '0 12 22-26 * *'
+    # ZP Index (precios USD/m2): días 1-5 de cada mes a las 15:00 UTC (12:00 Argentina)
+    - cron: '0 15 1-5 * *'
+  workflow_dispatch:  # Permite correrlo manualmente desde GitHub
+
+jobs:
+  scraper-caba:
+    name: Escrituras CABA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install -r scrapers/requirements.txt
+
+      - name: Correr scraper CABA
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scrapers/scraper_escrituras.py
+
+  scraper-pba:
+    name: Escrituras PBA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install -r scrapers/requirements.txt
+
+      - name: Correr scraper PBA
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scrapers/scraper_escrituras_pba.py
+
+  scraper-zpindex:
+    name: ZP Index Precios m2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install -r scrapers/requirements.txt
+
+      - name: Correr scraper ZP Index
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scrapers/scraper_zpindex.py
