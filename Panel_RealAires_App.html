@@ -248,6 +248,53 @@ tr:hover td { background: #FAFBFC; }
 .pac-item { padding: 6px 10px; cursor: pointer; }
 .pac-item:hover { background: #F9FAFB; }
 .pac-item-query { font-size: 12px; color: #111; }
+
+/* ═══════ BÚSQUEDAS ═══════ */
+.bq-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; background:#F3F4F6; color:#374151; margin:2px 4px 2px 0; white-space:nowrap }
+.bq-chip.dark { background:#0A0A0A; color:#fff }
+.bq-chip.gold { background:#FEF3C7; color:#92400E }
+.bq-estado { display:inline-flex; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:700; white-space:nowrap }
+.bq-estado.Activa { background:var(--grn-lt); color:#15803D }
+.bq-estado.Pausada { background:var(--org-lt); color:#C2410C }
+.bq-estado.Concretada { background:#EDE9FE; color:#6D28D9 }
+.bq-estado.Caída { background:var(--red-lt); color:#B91C1C }
+.bq-row-click { cursor:pointer }
+.bq-row-click:hover td { background:#F9FAFB }
+.bq-cliente { font-weight:700; color:var(--navy); font-size:13px }
+.bq-sub { font-size:11px; color:#6B7280; margin-top:2px }
+.bq-detail-head { background:var(--white); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.25rem; margin-bottom:1rem; display:grid; grid-template-columns: 1.1fr 2fr; gap:1.25rem }
+.bq-detail-head h2 { font-size:18px; font-weight:800; color:var(--navy); margin-bottom:4px }
+.bq-contact { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
+.bq-link-btn { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:600; text-decoration:none; border:1.5px solid var(--border); color:var(--gray); background:#fff; cursor:pointer; white-space:nowrap }
+.bq-link-btn:hover { border-color:var(--navy); color:var(--navy) }
+.bq-link-btn.wa { border-color:#86EFAC; background:#F0FDF4; color:#15803D }
+.bq-link-btn.wa:hover { border-color:#16A34A }
+.bq-crit-label { font-size:10.5px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px }
+.bq-notas { font-size:12px; color:#374151; margin-top:8px; white-space:pre-wrap; background:#F9FAFB; border-radius:8px; padding:8px 10px }
+.bq-mini-select { padding:4px 6px; border:1.5px solid var(--border); border-radius:6px; font-size:11px; background:#fff; font-family:inherit; outline:none; max-width:140px }
+.bq-mini-select:focus { border-color:var(--navy) }
+.bq-obs { width:100%; min-width:140px; padding:4px 7px; border:1.5px solid transparent; border-radius:6px; font-size:11.5px; font-family:inherit; background:transparent; outline:none }
+.bq-obs:hover { border-color:var(--border) }
+.bq-obs:focus { border-color:var(--navy); background:#fff }
+.bq-etapa-Relevada { background:#F3F4F6 }
+.bq-etapa-Enviada { background:#E0F2FE }
+.bq-etapa-Visita { background:#FEF3C7 }
+.bq-etapa-Visitada { background:#DCFCE7 }
+.bq-etapa-Ofertada { background:#EDE9FE }
+.bq-etapa-Descartada { background:#FEE2E2; color:#991B1B }
+tr.bq-descartada td { opacity:.55 }
+.bq-portal { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:4px; background:#EDE9FE; color:#5B21B6; text-transform:uppercase; letter-spacing:.3px }
+.bq-cruce { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700; background:#FEF3C7; color:#92400E; cursor:help; white-space:nowrap }
+.bq-checks { display:flex; flex-wrap:wrap; gap:6px 14px; padding-top:2px }
+.bq-checks label { display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:500; color:#374151; text-transform:none; letter-spacing:0; cursor:pointer }
+.bq-checks input { accent-color:#0A0A0A; width:14px; height:14px }
+.bq-inline2 { display:grid; grid-template-columns:1fr 1fr; gap:8px }
+.bq-inline3 { display:grid; grid-template-columns:1fr 1fr 90px; gap:8px }
+.bq-sug-item { display:flex; align-items:center; gap:12px; padding:10px 1.25rem; border-bottom:1px solid #F3F4F6 }
+.bq-sug-item:last-child { border-bottom:none }
+.bq-sug-main { flex:1; min-width:0 }
+.bq-sug-title { font-weight:600; font-size:12.5px; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+@media (max-width:900px) { .bq-detail-head { grid-template-columns:1fr } }
 </style>
   <!-- Google Maps cargado dinámicamente en initMapa() -->
 <script>
@@ -304,6 +351,10 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
       <div class="nav-item" onclick="showPage('fichas')" id="nav-fichas">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         <span>Prelisting</span>
+      </div>
+      <div class="nav-item" onclick="showPage('busquedas')" id="nav-busquedas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M8.5 11.5l1.8-1.6 1.8 1.6V14h-3.6z"/></svg>
+        <span>Búsquedas</span>
       </div>
       <div class="nav-item" onclick="showPage('asesores')" id="nav-asesores">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -585,6 +636,119 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
         </div>
       </div>
     </div>
+
+
+    <!-- BÚSQUEDAS -->
+    <div class="page" id="page-busquedas">
+      <div class="page-header">
+        <h1 id="bq-title">Búsquedas</h1>
+        <div style="display:flex;gap:8px;align-items:center" id="bq-header-actions"></div>
+      </div>
+      <div class="page-content">
+        <!-- LISTADO -->
+        <div id="bq-list-view">
+          <div class="kpi-grid">
+            <div class="kpi-card green"><div class="kpi-label">Búsquedas activas</div><div class="kpi-value" id="bq-kpi-activas">0</div><div class="kpi-sub" id="bq-kpi-activas-sub"></div></div>
+            <div class="kpi-card"><div class="kpi-label">Propiedades relevadas</div><div class="kpi-value" id="bq-kpi-props">0</div><div class="kpi-sub">en búsquedas activas</div></div>
+            <div class="kpi-card orange"><div class="kpi-label">Visitas</div><div class="kpi-value" id="bq-kpi-visitas">0</div><div class="kpi-sub">coordinadas o realizadas</div></div>
+            <div class="kpi-card purple"><div class="kpi-label">Ofertas</div><div class="kpi-value" id="bq-kpi-ofertas">0</div><div class="kpi-sub">propiedades ofertadas</div></div>
+          </div>
+          <div class="table-card">
+            <div class="table-toolbar">
+              <input class="search-input" id="bq-search" placeholder="Buscar por cliente, barrio, notas..." oninput="bqRenderList()">
+              <select class="filter" id="bq-f-estado" onchange="bqRenderList()">
+                <option value="Activa">Activas</option>
+                <option value="Pausada">Pausadas</option>
+                <option value="Concretada">Concretadas</option>
+                <option value="Caída">Caídas</option>
+                <option value="">Todos los estados</option>
+              </select>
+              <select class="filter" id="bq-f-operacion" onchange="bqRenderList()">
+                <option value="">Venta y alquiler</option>
+                <option>Venta</option>
+                <option>Alquiler</option>
+              </select>
+              <select class="filter" id="bq-f-asesor" onchange="bqRenderList()" style="display:none">
+                <option value="">Todos los asesores</option>
+              </select>
+              <input class="search-input" id="bq-f-barrio" placeholder="Barrio" list="bq-barrios-list" style="flex:0 0 150px;min-width:120px" oninput="bqRenderList()">
+              <input class="search-input" id="bq-f-presupuesto" type="number" placeholder="Presupuesto USD" style="flex:0 0 150px;min-width:120px" oninput="bqRenderList()" title="Muestra las búsquedas cuyo rango de precio incluye este valor">
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Busca</th>
+                    <th>Barrios</th>
+                    <th>Presupuesto</th>
+                    <th>Asesor</th>
+                    <th style="text-align:center">Props.</th>
+                    <th>Última actividad</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="bq-tbody">
+                  <tr><td colspan="8" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETALLE -->
+        <div id="bq-detail-view" style="display:none">
+          <div class="bq-detail-head" id="bq-detail-head"></div>
+
+          <div class="table-card" style="margin-bottom:1rem">
+            <div class="table-toolbar">
+              <button class="btn-add" onclick="bqPegarDesdeExtension()">📋 Pegar desde extensión</button>
+              <button class="action-btn" style="padding:8px 12px;font-size:12.5px;font-weight:600" onclick="bqAbrirModalProp()">+ Agregar manual</button>
+              <input class="search-input" id="bq-p-search" placeholder="Filtrar propiedades..." oninput="bqRenderProps()">
+              <select class="filter" id="bq-p-etapa" onchange="bqRenderProps()">
+                <option value="__activas">Sin descartadas</option>
+                <option value="">Todas las etapas</option>
+              </select>
+              <select class="filter" id="bq-p-orden" onchange="bqRenderProps()">
+                <option value="reciente">Más recientes</option>
+                <option value="prioridad">Prioridad</option>
+                <option value="precio">Menor precio</option>
+                <option value="m2">Menor USD/m²</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Propiedad</th>
+                    <th>Precio</th>
+                    <th>Expensas</th>
+                    <th>Amb.</th>
+                    <th>m² cub / tot</th>
+                    <th>USD/m²</th>
+                    <th>Comercializa</th>
+                    <th>Etapa</th>
+                    <th>Contactado</th>
+                    <th>Prioridad</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody id="bq-props-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>Propiedades del equipo que encajan con esta búsqueda</span>
+              <span style="font-size:11px;font-weight:500;color:#9CA3AF">Relevadas por otros asesores y todavía no agregadas</span>
+            </div>
+            <div id="bq-sugeridas"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <datalist id="bq-barrios-list"></datalist>
 
     <!-- ASESORES -->
     <div class="page" id="page-asesores">
@@ -1691,6 +1855,7 @@ function showPage(name) {
   if (name === 'config') loadConfig()
   if (name === 'objetivos') loadObjetivos()
   if (name === 'fichas') loadFichas()
+  if (name === 'busquedas') loadBusquedas()
   if (name === 'historial') loadHistorial()
   if (name === 'mercado') loadMercado()
 }
@@ -5922,5 +6087,781 @@ function renderZpZona(sufijo, datos) {
   </div>
 </div>
 
+
+<!-- MODAL BÚSQUEDA -->
+<div class="modal-overlay" id="modal-busqueda">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2 id="bq-modal-title">Nueva búsqueda</h2>
+      <button class="modal-close" onclick="bqCerrarModal('modal-busqueda')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Cliente *</label><input id="bqf-cliente" placeholder="Nombre y apellido"></div>
+        <div class="form-group"><label>Teléfono</label><input id="bqf-tel" placeholder="11 5555-5555"></div>
+        <div class="form-group"><label>Email</label><input id="bqf-email" type="email"></div>
+        <div class="form-group"><label>Asesor</label><select id="bqf-asesor"></select></div>
+        <div class="form-group"><label>Operación</label><select id="bqf-operacion"><option>Venta</option><option>Alquiler</option></select></div>
+        <div class="form-group"><label>Forma de pago</label>
+          <select id="bqf-pago"><option value="">Sin definir</option><option>Contado</option><option>Crédito hipotecario</option><option>Con venta de propiedad</option></select>
+        </div>
+        <div class="form-group full"><label>Tipo de inmueble</label><div class="bq-checks" id="bqf-tipos"></div></div>
+        <div class="form-group full"><label>Barrios (separados por coma)</label><input id="bqf-barrios" list="bq-barrios-list" placeholder="Belgrano, Núñez, Colegiales"></div>
+        <div class="form-group"><label>Ambientes (mín. / máx.)</label><div class="bq-inline2"><input id="bqf-amb-min" type="number" min="1" placeholder="Mín."><input id="bqf-amb-max" type="number" min="1" placeholder="Máx."></div></div>
+        <div class="form-group"><label>Dormitorios mín. / Sup. mín. m²</label><div class="bq-inline2"><input id="bqf-dorm-min" type="number" min="0" placeholder="Dorm."><input id="bqf-sup-min" type="number" min="0" placeholder="m²"></div></div>
+        <div class="form-group full"><label>Presupuesto (mín. / máx. / moneda)</label><div class="bq-inline3"><input id="bqf-precio-min" type="number" placeholder="Mínimo"><input id="bqf-precio-max" type="number" placeholder="Máximo"><select id="bqf-moneda"><option value="USD">USD</option><option value="ARS">$</option></select></div></div>
+        <div class="form-group full"><label>Requisitos</label><div class="bq-checks" id="bqf-requisitos"></div></div>
+        <div class="form-group"><label>Estado</label><select id="bqf-estado"><option>Activa</option><option>Pausada</option><option>Concretada</option><option>Caída</option></select></div>
+        <div class="form-group full"><label>Notas</label><textarea id="bqf-notas" placeholder="Motivación, plazos, qué descarta, quién decide..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-cancel" id="bqf-eliminar" style="border-color:#DC2626;color:#DC2626;display:none" onclick="bqEliminarBusqueda()">Eliminar</button>
+      <div style="display:flex;gap:10px;margin-left:auto">
+        <button class="btn-cancel" onclick="bqCerrarModal('modal-busqueda')">Cancelar</button>
+        <button class="btn-save" onclick="bqGuardarBusqueda()">Guardar búsqueda</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROPIEDAD RELEVADA -->
+<div class="modal-overlay" id="modal-bq-prop">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2 id="bqp-modal-title">Agregar propiedad</h2>
+      <button class="modal-close" onclick="bqCerrarModal('modal-bq-prop')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Link de la publicación</label><input id="bqp-link" placeholder="https://www.zonaprop.com.ar/propiedades/..."></div>
+        <div class="form-group"><label>Dirección *</label><input id="bqp-direccion" placeholder="Calle y altura"></div>
+        <div class="form-group"><label>Barrio</label><input id="bqp-barrio" list="bq-barrios-list"></div>
+        <div class="form-group"><label>Tipo</label><select id="bqp-tipo"></select></div>
+        <div class="form-group"><label>Operación</label><select id="bqp-operacion"><option value="">Sin definir</option><option>Venta</option><option>Alquiler</option></select></div>
+        <div class="form-group"><label>Precio / moneda</label><div class="bq-inline2" style="grid-template-columns:1fr 90px"><input id="bqp-precio" type="number"><select id="bqp-moneda"><option value="USD">USD</option><option value="ARS">$</option></select></div></div>
+        <div class="form-group"><label>Expensas / moneda</label><div class="bq-inline2" style="grid-template-columns:1fr 90px"><input id="bqp-expensas" type="number"><select id="bqp-exp-moneda"><option value="ARS">$</option><option value="USD">USD</option></select></div></div>
+        <div class="form-group"><label>Ambientes / dormitorios</label><div class="bq-inline2"><input id="bqp-amb" type="number" placeholder="Amb."><input id="bqp-dorm" type="number" placeholder="Dorm."></div></div>
+        <div class="form-group"><label>Baños / cocheras</label><div class="bq-inline2"><input id="bqp-banos" type="number" placeholder="Baños"><input id="bqp-cocheras" type="number" placeholder="Coch."></div></div>
+        <div class="form-group"><label>Sup. cubierta / total m²</label><div class="bq-inline2"><input id="bqp-sup-cub" type="number" placeholder="Cub."><input id="bqp-sup-tot" type="number" placeholder="Total"></div></div>
+        <div class="form-group"><label>Antigüedad (años)</label><input id="bqp-antiguedad" type="number"></div>
+        <div class="form-group"><label>Inmobiliaria / anunciante</label><input id="bqp-anunciante"></div>
+        <div class="form-group"><label>Teléfono / WhatsApp</label><input id="bqp-tel"></div>
+        <div class="form-group full"><label>Email</label><input id="bqp-email" type="email"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="bqCerrarModal('modal-bq-prop')">Cancelar</button>
+      <button class="btn-save" onclick="bqGuardarProp()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// BÚSQUEDAS (clientes compradores / inquilinos y propiedades relevadas)
+// Tablas: busquedas, propiedades_relevadas, busqueda_propiedades
+// SQL de creación: sql/busquedas.sql
+// ══════════════════════════════════════════════════════════════════
+const BQ_TIPOS = ['Departamento','PH','Casa','Local','Oficina','Terreno','Cochera']
+const BQ_REQUISITOS = ['Cochera','Balcón','Patio / terraza','Apto crédito','Apto profesional','Amenities','A estrenar','Acepta mascotas']
+const BQ_ETAPAS = ['Relevada','Enviada al cliente','Visita coordinada','Visitada','Ofertada','Descartada']
+const BQ_PRIO = { 'Alta': 0, 'Media': 1, 'Baja': 2 }
+const BQ_BARRIOS = ['Agronomía','Almagro','Balvanera','Barracas','Belgrano','Boedo','Caballito','Chacarita','Coghlan','Colegiales','Constitución','Flores','Floresta','La Boca','La Paternal','Liniers','Mataderos','Monte Castro','Monserrat','Nueva Pompeya','Núñez','Palermo','Parque Avellaneda','Parque Chacabuco','Parque Chas','Parque Patricios','Puerto Madero','Recoleta','Retiro','Saavedra','San Cristóbal','San Nicolás','San Telmo','Vélez Sarsfield','Versalles','Villa Crespo','Villa del Parque','Villa Devoto','Villa General Mitre','Villa Lugano','Villa Luro','Villa Ortúzar','Villa Pueyrredón','Villa Real','Villa Riachuelo','Villa Santa Rita','Villa Soldati','Villa Urquiza','Vicente López','Olivos','Florida','Munro','La Lucila','Martínez','San Isidro','Acassuso','Beccar','Victoria','San Fernando','Tigre','Nordelta','Pilar','San Martín','Villa Ballester','Ramos Mejía','Haedo','Morón','Castelar','Avellaneda','Lanús','Banfield','Lomas de Zamora','Adrogué','Quilmes']
+
+let bqData = [], bqVinculos = [], bqActual = null, bqProps = [], bqCruce = {}, bqEditBusqueda = null, bqEditVinculo = null
+
+// ── utilidades ────────────────────────────────────────────────────
+function bqEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))
+}
+function bqNum(v) { if (v === '' || v == null) return null; const n = parseFloat(v); return isNaN(n) ? null : n }
+function bqInt(v) { const n = bqNum(v); return n == null ? null : Math.round(n) }
+function bqNorm(t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() }
+function bqMoney(v, m) {
+  if (v == null || v === '') return '—'
+  return (m === 'ARS' ? '$ ' : 'USD ') + Number(v).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+}
+function bqWaNumber(raw) {
+  let d = String(raw || '').replace(/\D/g, '')
+  if (!d) return ''
+  if (d.startsWith('54')) { d = d.slice(2); if (d.startsWith('9')) d = d.slice(1) }
+  d = d.replace(/^0/, '')
+  d = d.replace(/^(\d{2,4})15(\d{6,8})$/, (m, a, n) => (a + n).length === 10 ? a + n : m)
+  if (d.length === 8) d = '11' + d
+  return d.length >= 10 ? '549' + d : ''
+}
+function bqWaLink(tel, msg) {
+  const n = bqWaNumber(tel)
+  return n ? `https://wa.me/${n}${msg ? '?text=' + encodeURIComponent(msg) : ''}` : ''
+}
+function bqHace(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso), hoy = new Date()
+  const dias = Math.floor((new Date(hoy.toDateString()) - new Date(d.toDateString())) / 86400000)
+  if (dias <= 0) return 'Hoy'
+  if (dias === 1) return 'Ayer'
+  if (dias < 30) return `Hace ${dias} días`
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: '2-digit' })
+}
+function bqMiAsesor() {
+  const mail = (currentUser?.email || '').toLowerCase()
+  return (asesoresList || []).find(a => (a.mail || '').toLowerCase() === mail) || null
+}
+function bqMiNombre() { return window.currentUserNombre || bqMiAsesor()?.nombre || '' }
+function bqAbrirModal(id) { document.getElementById(id).classList.add('open') }
+function bqCerrarModal(id) { document.getElementById(id).classList.remove('open') }
+
+function bqTextoAmb(b) {
+  const a = b.amb_min, z = b.amb_max
+  if (a && z) return a === z ? `${a} amb.` : `${a} a ${z} amb.`
+  if (a) return `${a}+ amb.`
+  if (z) return `Hasta ${z} amb.`
+  return ''
+}
+function bqTextoPresupuesto(b) {
+  const f = v => Number(v).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+  const m = b.moneda === 'ARS' ? '$' : 'USD'
+  if (b.precio_min && b.precio_max) return `${m} ${f(b.precio_min)} a ${f(b.precio_max)}`
+  if (b.precio_max) return `Hasta ${m} ${f(b.precio_max)}`
+  if (b.precio_min) return `Desde ${m} ${f(b.precio_min)}`
+  return '—'
+}
+
+// Deduce tipo y operación desde el título o el link de la publicación
+function bqInferir(texto) {
+  const t = bqNorm(texto)
+  let tipo = null, operacion = null
+  if (/\bph\b|-ph-|tipo casa/.test(t)) tipo = 'PH'
+  else if (/departamento|depto|monoambiente|loft|duplex|triplex|semipiso|piso/.test(t)) tipo = 'Departamento'
+  else if (/\bcasa|chalet/.test(t)) tipo = 'Casa'
+  else if (/\blocal/.test(t)) tipo = 'Local'
+  else if (/oficina/.test(t)) tipo = 'Oficina'
+  else if (/terreno|\blote/.test(t)) tipo = 'Terreno'
+  else if (/cochera/.test(t)) tipo = 'Cochera'
+  if (/alquiler/.test(t)) operacion = 'Alquiler'
+  else if (/venta/.test(t)) operacion = 'Venta'
+  return { tipo, operacion }
+}
+
+// Misma lógica que la función SQL ra_cruce_propiedades
+function bqEncaja(b, p) {
+  if (!b || !p || b.estado !== 'Activa') return false
+  if (p.operacion && b.operacion !== p.operacion) return false
+  if ((b.tipos || []).length && p.tipo && !b.tipos.includes(p.tipo)) return false
+  if ((b.barrios || []).length && p.barrio) {
+    const pb = bqNorm(p.barrio)
+    if (!b.barrios.some(z => { const n = bqNorm(z); return pb.includes(n) || n.includes(pb) })) return false
+  }
+  if (p.amb != null && b.amb_min != null && p.amb < b.amb_min) return false
+  if (p.amb != null && b.amb_max != null && p.amb > b.amb_max) return false
+  if (p.dorm != null && b.dorm_min != null && p.dorm < b.dorm_min) return false
+  const sup = p.sup_cub ?? p.sup_tot
+  if (b.sup_min != null && sup != null && sup < b.sup_min) return false
+  if (p.precio != null && p.moneda === b.moneda) {
+    if (b.precio_max != null && p.precio > b.precio_max * 1.10) return false
+    if (b.precio_min != null && p.precio < b.precio_min * 0.90) return false
+  }
+  return true
+}
+
+// ── carga y listado ───────────────────────────────────────────────
+function bqPrepararFiltros() {
+  const dl = document.getElementById('bq-barrios-list')
+  if (dl && !dl.options.length) dl.innerHTML = BQ_BARRIOS.map(b => `<option value="${bqEsc(b)}">`).join('')
+  const fa = document.getElementById('bq-f-asesor')
+  if (fa) {
+    fa.style.display = window.isAdmin ? '' : 'none'
+    const actual = fa.value
+    fa.innerHTML = '<option value="">Todos los asesores</option>' +
+      (asesoresList || []).filter(a => a.activo !== false).map(a => `<option>${bqEsc(a.nombre)}</option>`).join('')
+    fa.value = actual
+  }
+  const fe = document.getElementById('bq-p-etapa')
+  if (fe && fe.options.length <= 2) fe.insertAdjacentHTML('beforeend', BQ_ETAPAS.map(e => `<option>${e}</option>`).join(''))
+}
+
+async function loadBusquedas() {
+  bqPrepararFiltros()
+  bqMostrarLista()
+  const tbody = document.getElementById('bq-tbody')
+  const [rb, rv] = await Promise.all([
+    sb.from('busquedas').select('*').order('updated_at', { ascending: false }),
+    sb.from('busqueda_propiedades').select('id, busqueda_id, etapa, created_at, updated_at')
+  ])
+  if (rb.error) {
+    const falta = /does not exist|relation|schema cache/i.test(rb.error.message || '')
+    tbody.innerHTML = `<tr><td colspan="8" class="table-empty">${falta
+      ? 'El módulo todavía no está activado: falta ejecutar <b>sql/busquedas.sql</b> en Supabase.'
+      : 'Error al cargar búsquedas: ' + bqEsc(rb.error.message)}</td></tr>`
+    return
+  }
+  bqData = rb.data || []
+  bqVinculos = rv.data || []
+  bqRenderList()
+}
+
+function bqMostrarLista() {
+  bqActual = null
+  document.getElementById('bq-list-view').style.display = ''
+  document.getElementById('bq-detail-view').style.display = 'none'
+  document.getElementById('bq-title').textContent = 'Búsquedas'
+  document.getElementById('bq-header-actions').innerHTML = `
+    <button class="btn-add" onclick="bqAbrirModalBusqueda()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva búsqueda
+    </button>`
+}
+
+function bqRenderList() {
+  const tbody = document.getElementById('bq-tbody')
+  if (!tbody) return
+  const q = bqNorm(document.getElementById('bq-search').value)
+  const est = document.getElementById('bq-f-estado').value
+  const op = document.getElementById('bq-f-operacion').value
+  const ase = document.getElementById('bq-f-asesor').value
+  const bar = bqNorm(document.getElementById('bq-f-barrio').value)
+  const pres = bqNum(document.getElementById('bq-f-presupuesto').value)
+
+  // KPIs sobre todas las búsquedas visibles para el usuario
+  const activas = bqData.filter(b => b.estado === 'Activa')
+  const idsAct = new Set(activas.map(b => b.id))
+  const vAct = bqVinculos.filter(v => idsAct.has(v.busqueda_id))
+  document.getElementById('bq-kpi-activas').textContent = activas.length
+  document.getElementById('bq-kpi-activas-sub').textContent = `de ${bqData.length} en total`
+  document.getElementById('bq-kpi-props').textContent = vAct.filter(v => v.etapa !== 'Descartada').length
+  document.getElementById('bq-kpi-visitas').textContent = vAct.filter(v => v.etapa === 'Visita coordinada' || v.etapa === 'Visitada').length
+  document.getElementById('bq-kpi-ofertas').textContent = vAct.filter(v => v.etapa === 'Ofertada').length
+
+  let rows = bqData.filter(b => {
+    if (est && b.estado !== est) return false
+    if (op && b.operacion !== op) return false
+    if (ase && b.asesor !== ase) return false
+    if (bar && !(b.barrios || []).some(z => bqNorm(z).includes(bar))) return false
+    if (pres != null) {
+      if (b.moneda !== 'USD') return false
+      if (b.precio_min != null && pres < b.precio_min) return false
+      if (b.precio_max != null && pres > b.precio_max) return false
+    }
+    if (q) {
+      const hay = bqNorm([b.cliente_nombre, b.cliente_tel, b.asesor, b.notas, (b.barrios || []).join(' '), (b.tipos || []).join(' ')].join(' '))
+      if (!hay.includes(q)) return false
+    }
+    return true
+  })
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="table-empty">${bqData.length ? 'No hay búsquedas con esos filtros.' : 'Todavía no hay búsquedas cargadas. Use "Nueva búsqueda" para crear la primera.'}</td></tr>`
+    return
+  }
+
+  const porBusqueda = {}
+  bqVinculos.forEach(v => {
+    const o = porBusqueda[v.busqueda_id] || (porBusqueda[v.busqueda_id] = { n: 0, ult: null })
+    if (v.etapa !== 'Descartada') o.n++
+    if (!o.ult || v.updated_at > o.ult) o.ult = v.updated_at
+  })
+
+  tbody.innerHTML = rows.map(b => {
+    const info = porBusqueda[b.id] || { n: 0, ult: null }
+    const ult = info.ult && info.ult > b.updated_at ? info.ult : b.updated_at
+    const barrios = b.barrios || []
+    const chipsB = barrios.slice(0, 3).map(z => `<span class="bq-chip">${bqEsc(z)}</span>`).join('') +
+      (barrios.length > 3 ? `<span class="bq-chip">+${barrios.length - 3}</span>` : '')
+    const busca = [(b.tipos || []).join(' / '), bqTextoAmb(b)].filter(Boolean).join(' · ') || 'Sin especificar'
+    return `<tr class="bq-row-click" onclick="bqAbrir('${b.id}')">
+      <td><div class="bq-cliente">${bqEsc(b.cliente_nombre)}</div><div class="bq-sub">${bqEsc(b.cliente_tel || '')}</div></td>
+      <td><span class="bq-chip dark">${bqEsc(b.operacion)}</span><div class="bq-sub">${bqEsc(busca)}</div></td>
+      <td>${chipsB || '<span class="bq-sub">Cualquiera</span>'}</td>
+      <td style="white-space:nowrap">${bqEsc(bqTextoPresupuesto(b))}</td>
+      <td>${bqEsc(b.asesor || b.asesor_email)}</td>
+      <td style="text-align:center;font-weight:700">${info.n}</td>
+      <td style="white-space:nowrap;color:#6B7280">${bqHace(ult)}</td>
+      <td><span class="bq-estado ${bqEsc(b.estado)}">${bqEsc(b.estado)}</span></td>
+    </tr>`
+  }).join('')
+}
+
+// ── detalle de una búsqueda ───────────────────────────────────────
+async function bqAbrir(id) {
+  const b = bqData.find(x => x.id === id)
+  if (!b) return
+  bqActual = b
+  bqProps = []; bqCruce = {}
+  document.getElementById('bq-list-view').style.display = 'none'
+  document.getElementById('bq-detail-view').style.display = ''
+  document.getElementById('bq-title').textContent = 'Búsqueda de ' + b.cliente_nombre
+  document.getElementById('bq-header-actions').innerHTML = `
+    <button class="btn-cancel" onclick="loadBusquedas()">← Volver</button>
+    <button class="btn-add" onclick="bqAbrirModalBusqueda(true)">Editar búsqueda</button>`
+  document.getElementById('bq-p-search').value = ''
+  bqRenderHead()
+  document.getElementById('bq-props-tbody').innerHTML = '<tr><td colspan="11" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>'
+  document.getElementById('bq-sugeridas').innerHTML = ''
+  window.scrollTo(0, 0)
+  await bqCargarProps()
+}
+
+function bqRenderHead() {
+  const b = bqActual
+  const tel = b.cliente_tel
+  const wa = bqWaLink(tel, '')
+  const contacto = [
+    wa ? `<a class="bq-link-btn wa" href="${wa}" target="_blank">WhatsApp</a>` : '',
+    tel ? `<a class="bq-link-btn" href="tel:${bqEsc(tel)}">${bqEsc(tel)}</a>` : '',
+    b.cliente_email ? `<a class="bq-link-btn" href="mailto:${bqEsc(b.cliente_email)}">${bqEsc(b.cliente_email)}</a>` : ''
+  ].join('')
+  const chips = []
+  chips.push(`<span class="bq-chip dark">${bqEsc(b.operacion)}</span>`)
+  ;(b.tipos || []).forEach(t => chips.push(`<span class="bq-chip">${bqEsc(t)}</span>`))
+  if (bqTextoAmb(b)) chips.push(`<span class="bq-chip">${bqEsc(bqTextoAmb(b))}</span>`)
+  if (b.dorm_min) chips.push(`<span class="bq-chip">${b.dorm_min}+ dorm.</span>`)
+  if (b.sup_min) chips.push(`<span class="bq-chip">Desde ${b.sup_min} m²</span>`)
+  chips.push(`<span class="bq-chip gold">${bqEsc(bqTextoPresupuesto(b))}</span>`)
+  if (b.forma_pago) chips.push(`<span class="bq-chip">${bqEsc(b.forma_pago)}</span>`)
+  const barrios = (b.barrios || []).map(z => `<span class="bq-chip">${bqEsc(z)}</span>`).join('') || '<span class="bq-sub">Cualquier barrio</span>'
+  const req = (b.requisitos || []).map(z => `<span class="bq-chip">${bqEsc(z)}</span>`).join('')
+  document.getElementById('bq-detail-head').innerHTML = `
+    <div>
+      <h2>${bqEsc(b.cliente_nombre)}</h2>
+      <div class="bq-sub">Asesor: <b>${bqEsc(b.asesor || b.asesor_email)}</b> · Creada ${bqHace(b.created_at).toLowerCase()}</div>
+      <div class="bq-contact">${contacto || '<span class="bq-sub">Sin datos de contacto</span>'}</div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:8px">
+        <span class="bq-crit-label" style="margin:0">Estado</span>
+        <select class="bq-mini-select" onchange="bqCambiarEstado(this.value)">
+          ${['Activa','Pausada','Concretada','Caída'].map(e => `<option ${e === b.estado ? 'selected' : ''}>${e}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div>
+      <div class="bq-crit-label">Qué busca</div>
+      <div>${chips.join('')}</div>
+      <div class="bq-crit-label" style="margin-top:10px">Barrios</div>
+      <div>${barrios}</div>
+      ${req ? `<div class="bq-crit-label" style="margin-top:10px">Requisitos</div><div>${req}</div>` : ''}
+      ${b.notas ? `<div class="bq-notas">${bqEsc(b.notas)}</div>` : ''}
+    </div>`
+}
+
+async function bqCambiarEstado(estado) {
+  const { error } = await sb.from('busquedas').update({ estado }).eq('id', bqActual.id)
+  if (error) { toast('Error: ' + error.message, true); return }
+  bqActual.estado = estado
+  registrarLog('estado_busqueda', 'busquedas', bqActual.id, { estado })
+  toast('Estado actualizado: ' + estado)
+}
+
+async function bqCargarProps() {
+  const id = bqActual.id
+  const { data, error } = await sb.from('busqueda_propiedades')
+    .select('*, propiedad:propiedades_relevadas(*)')
+    .eq('busqueda_id', id)
+    .order('created_at', { ascending: false })
+  if (!bqActual || bqActual.id !== id) return
+  if (error) { document.getElementById('bq-props-tbody').innerHTML = `<tr><td colspan="11" class="table-empty">Error: ${bqEsc(error.message)}</td></tr>`; return }
+  bqProps = (data || []).filter(x => x.propiedad)
+  bqRenderProps()
+  bqCargarCruce()
+  bqCargarSugeridas()
+}
+
+async function bqCargarCruce() {
+  const ids = bqProps.map(x => x.propiedad_id)
+  bqCruce = {}
+  if (!ids.length) return
+  const { data, error } = await sb.rpc('ra_cruce_propiedades', { p_ids: ids })
+  if (error || !bqActual) return
+  ;(data || []).forEach(r => {
+    if (r.busqueda_id === bqActual.id) return
+    ;(bqCruce[r.propiedad_id] = bqCruce[r.propiedad_id] || []).push(r)
+  })
+  bqRenderProps()
+}
+
+function bqRenderProps() {
+  const tbody = document.getElementById('bq-props-tbody')
+  if (!tbody || !bqActual) return
+  const q = bqNorm(document.getElementById('bq-p-search').value)
+  const et = document.getElementById('bq-p-etapa').value
+  const orden = document.getElementById('bq-p-orden').value
+  let rows = bqProps.filter(x => {
+    if (et === '__activas' && x.etapa === 'Descartada') return false
+    if (et && et !== '__activas' && x.etapa !== et) return false
+    if (q) {
+      const p = x.propiedad
+      if (!bqNorm([p.direccion, p.barrio, p.titulo, p.contacto_anunciante, x.obs].join(' ')).includes(q)) return false
+    }
+    return true
+  })
+  const m2 = p => (p.moneda === 'USD' && p.precio && (p.sup_cub || p.sup_tot)) ? p.precio / (p.sup_cub || p.sup_tot) : null
+  if (orden === 'prioridad') rows.sort((a, b) => (BQ_PRIO[a.prioridad] ?? 9) - (BQ_PRIO[b.prioridad] ?? 9))
+  if (orden === 'precio') rows.sort((a, b) => (a.propiedad.precio ?? Infinity) - (b.propiedad.precio ?? Infinity))
+  if (orden === 'm2') rows.sort((a, b) => (m2(a.propiedad) ?? Infinity) - (m2(b.propiedad) ?? Infinity))
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="11" class="table-empty">${bqProps.length
+      ? 'No hay propiedades con esos filtros.'
+      : 'Todavía no hay propiedades. Capture un aviso con la extensión de Real Aires y use "Pegar desde extensión".'}</td></tr>`
+    return
+  }
+
+  const yo = bqMiNombre()
+  tbody.innerHTML = rows.map(x => {
+    const p = x.propiedad
+    const dir = p.direccion || p.titulo || 'Sin dirección'
+    const vm2 = m2(p)
+    const cruce = bqCruce[p.id] || []
+    const cruceTxt = cruce.map(r => r.es_propia ? `${r.cliente} (${r.asesor || 'propia'})` : (r.asesor || 'otro asesor')).join(', ')
+    const msg = `Hola${p.contacto_anunciante ? ' ' + p.contacto_anunciante : ''}, ${yo ? 'soy ' + yo + ' de Real Aires' : 'te escribo de Real Aires'}. Te consulto por la propiedad de ${dir}${p.link ? ' (' + p.link + ')' : ''}. ¿Sigue disponible? Tengo un cliente interesado.`
+    const wa = bqWaLink(p.contacto_whatsapp || p.contacto_tel, msg)
+    const etapaCls = 'bq-etapa-' + (x.etapa || '').split(' ')[0]
+    const sel = (field, opts, val, cls = '') => `<select class="bq-mini-select ${cls}" onchange="bqActualizarVinculo('${x.id}','${field}',this.value)">${opts.map(o => `<option ${o === val ? 'selected' : ''}>${o}</option>`).join('')}</select>`
+    return `<tr class="${x.etapa === 'Descartada' ? 'bq-descartada' : ''}">
+      <td style="min-width:200px">
+        <div class="bq-cliente" style="font-size:12.5px">${bqEsc(dir)}</div>
+        <div class="bq-sub">${bqEsc(p.barrio || '')}${p.barrio ? ' · ' : ''}${p.tipo ? bqEsc(p.tipo) + ' · ' : ''}${p.portal ? `<span class="bq-portal">${bqEsc(p.portal)}</span> ` : ''}${p.link ? `<a href="${bqEsc(p.link)}" target="_blank" style="color:#0A0A0A;font-weight:600">Ver aviso ↗</a>` : ''}</div>
+        <div style="display:flex;gap:4px;margin-top:5px"><button class="action-btn" style="font-size:10.5px;padding:2px 8px" onclick="bqAbrirModalProp('${x.id}')">Editar</button><button class="action-btn del" style="font-size:10.5px;padding:2px 8px" title="Quitar de esta búsqueda" onclick="bqQuitarVinculo('${x.id}')">Quitar</button></div>
+        ${cruce.length ? `<div style="margin-top:4px"><span class="bq-cruce" title="También encaja con: ${bqEsc(cruceTxt)}">⚡ Encaja con ${cruce.length} búsqueda${cruce.length > 1 ? 's' : ''} más</span></div>` : ''}
+      </td>
+      <td style="white-space:nowrap;font-weight:600">${bqMoney(p.precio, p.moneda)}</td>
+      <td style="white-space:nowrap">${bqMoney(p.expensas, p.exp_moneda)}</td>
+      <td style="text-align:center">${p.amb ?? '—'}${p.dorm ? `<div class="bq-sub">${p.dorm} dorm.</div>` : ''}</td>
+      <td style="white-space:nowrap">${p.sup_cub ?? '—'} / ${p.sup_tot ?? '—'}</td>
+      <td style="white-space:nowrap">${vm2 ? 'USD ' + Math.round(vm2).toLocaleString('es-AR') : '—'}</td>
+      <td style="min-width:140px">
+        <div style="font-weight:600;font-size:11.5px">${bqEsc(p.contacto_anunciante || '—')}</div>
+        <div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap">
+          ${wa ? `<a class="bq-link-btn wa" style="padding:3px 8px;font-size:10.5px" href="${wa}" target="_blank">WhatsApp</a>` : ''}
+          ${p.contacto_tel ? `<a class="bq-link-btn" style="padding:3px 8px;font-size:10.5px" href="tel:${bqEsc(p.contacto_tel)}">${bqEsc(p.contacto_tel)}</a>` : ''}
+        </div>
+      </td>
+      <td>${sel('etapa', BQ_ETAPAS, x.etapa, etapaCls)}</td>
+      <td>${sel('contactado', ['Pendiente','Sí','No'], x.contactado)}</td>
+      <td>${sel('prioridad', ['Alta','Media','Baja'], x.prioridad)}</td>
+      <td><input class="bq-obs" value="${bqEsc(x.obs || '')}" placeholder="Agregar nota..." onchange="bqActualizarVinculo('${x.id}','obs',this.value)"></td>
+    </tr>`
+  }).join('')
+}
+
+async function bqActualizarVinculo(id, field, value) {
+  const { error } = await sb.from('busqueda_propiedades').update({ [field]: value }).eq('id', id)
+  if (error) { toast('Error: ' + error.message, true); return }
+  const x = bqProps.find(v => v.id === id)
+  if (x) { x[field] = value; x.updated_at = new Date().toISOString() }
+  if (field === 'etapa') {
+    registrarLog('etapa_propiedad_busqueda', 'busquedas', bqActual?.id, { etapa: value, propiedad: x?.propiedad?.link || x?.propiedad?.direccion })
+    bqRenderProps()
+  }
+  if (field !== 'obs') toast('Actualizado')
+}
+
+async function bqQuitarVinculo(id) {
+  const x = bqProps.find(v => v.id === id)
+  if (!confirm(`¿Quitar "${x?.propiedad?.direccion || 'esta propiedad'}" de la búsqueda? La propiedad sigue disponible para el resto del equipo.`)) return
+  const { error } = await sb.from('busqueda_propiedades').delete().eq('id', id)
+  if (error) { toast('Error: ' + error.message, true); return }
+  bqProps = bqProps.filter(v => v.id !== id)
+  bqVinculos = bqVinculos.filter(v => v.id !== id)
+  bqRenderProps()
+  bqCargarSugeridas()
+  toast('Propiedad quitada de la búsqueda')
+}
+
+async function bqCargarSugeridas() {
+  const cont = document.getElementById('bq-sugeridas')
+  if (!cont || !bqActual) return
+  if (bqActual.estado !== 'Activa') {
+    cont.innerHTML = '<div class="table-empty" style="padding:1.5rem">Las sugerencias se muestran solo en búsquedas activas.</div>'
+    return
+  }
+  const { data, error } = await sb.from('propiedades_relevadas').select('*').order('created_at', { ascending: false }).limit(500)
+  if (error || !bqActual) return
+  const ya = new Set(bqProps.map(x => x.propiedad_id))
+  const lista = (data || []).filter(p => !ya.has(p.id) && bqEncaja(bqActual, p)).slice(0, 15)
+  if (!lista.length) {
+    cont.innerHTML = '<div class="table-empty" style="padding:1.5rem">Por ahora no hay propiedades relevadas por el equipo que encajen con esta búsqueda.</div>'
+    return
+  }
+  cont.innerHTML = lista.map(p => `
+    <div class="bq-sug-item">
+      <div class="bq-sug-main">
+        <div class="bq-sug-title">${bqEsc(p.direccion || p.titulo || 'Sin dirección')}${p.barrio ? ' · ' + bqEsc(p.barrio) : ''}</div>
+        <div class="bq-sub">${bqMoney(p.precio, p.moneda)} · ${p.amb ?? '—'} amb. · ${p.sup_cub ?? '—'} m² cub.${p.contacto_anunciante ? ' · ' + bqEsc(p.contacto_anunciante) : ''} · Relevada ${bqHace(p.created_at).toLowerCase()}</div>
+      </div>
+      ${p.link ? `<a class="bq-link-btn" href="${bqEsc(p.link)}" target="_blank">Ver aviso ↗</a>` : ''}
+      <button class="btn-sm" onclick="bqVincular('${p.id}')">Agregar</button>
+    </div>`).join('')
+}
+
+// ── alta de propiedades ───────────────────────────────────────────
+function bqLimpiar(obj) {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null && v !== undefined && v !== ''))
+}
+
+async function bqUpsertPropiedad(prop) {
+  if (prop.link) {
+    const { data: ex } = await sb.from('propiedades_relevadas').select('id').eq('link', prop.link).maybeSingle()
+    if (ex) {
+      const { creado_por, ...resto } = prop
+      const { error } = await sb.from('propiedades_relevadas').update(bqLimpiar(resto)).eq('id', ex.id)
+      if (error) throw error
+      return ex.id
+    }
+  }
+  const { data, error } = await sb.from('propiedades_relevadas').insert(bqLimpiar(prop)).select('id').single()
+  if (error) {
+    if (error.code === '23505' && prop.link) {
+      const { data: ex } = await sb.from('propiedades_relevadas').select('id').eq('link', prop.link).maybeSingle()
+      if (ex) return ex.id
+    }
+    throw error
+  }
+  return data.id
+}
+
+async function bqVincular(propiedadId, seguimiento = {}) {
+  if (!bqActual) return false
+  if (bqProps.some(x => x.propiedad_id === propiedadId)) { toast('Esa propiedad ya está en esta búsqueda'); return false }
+  const fila = bqLimpiar({ busqueda_id: bqActual.id, propiedad_id: propiedadId, ...seguimiento })
+  const { error } = await sb.from('busqueda_propiedades').insert(fila)
+  if (error) {
+    if (error.code === '23505') { toast('Esa propiedad ya está en esta búsqueda'); return false }
+    toast('Error: ' + error.message, true); return false
+  }
+  registrarLog('agregar_propiedad_busqueda', 'busquedas', bqActual.id, { propiedad_id: propiedadId })
+  toast('Propiedad agregada a la búsqueda')
+  const { data } = await sb.from('busqueda_propiedades').select('id, busqueda_id, etapa, created_at, updated_at').eq('busqueda_id', bqActual.id)
+  bqVinculos = bqVinculos.filter(v => v.busqueda_id !== bqActual.id).concat(data || [])
+  await bqCargarProps()
+  return true
+}
+
+async function bqPegarDesdeExtension() {
+  if (!bqActual) return
+  let txt = ''
+  try { txt = await navigator.clipboard.readText() } catch (e) {}
+  if (!txt || !txt.includes('_realaires')) {
+    txt = prompt('Pegue aquí (Ctrl+V) la propiedad copiada con la extensión de Real Aires:') || ''
+  }
+  txt = txt.trim()
+  if (!txt) return
+  let d
+  try { d = JSON.parse(txt) } catch (e) { toast('Lo pegado no es una propiedad copiada con la extensión', true); return }
+  if (!d || !d._realaires) { toast('Lo pegado no es una propiedad copiada con la extensión', true); return }
+
+  const c = d.contacto || {}
+  const inf = bqInferir([d.titulo, d.link].join(' '))
+  const prop = {
+    link: d.link || null,
+    portal: d.portal || null,
+    titulo: d.titulo || null,
+    tipo: inf.tipo,
+    operacion: inf.operacion,
+    direccion: d.direccion || (d._v ? null : d.barrio) || null,   // la versión 1 de la extensión guardaba todo en "barrio"
+    barrio: d.zona || null,
+    precio: bqNum(d.precio),
+    moneda: d.moneda || 'USD',
+    expensas: bqNum(d.exp),
+    exp_moneda: d.expMoneda || 'ARS',
+    amb: bqInt(d.amb),
+    dorm: bqInt(d.dorm),
+    banos: bqInt(d.banos),
+    cocheras: bqInt(d.coch),
+    sup_cub: bqNum(d.supc),
+    sup_tot: bqNum(d.supt),
+    antiguedad: bqInt(d.antig),
+    contacto_anunciante: c.anunciante || null,
+    contacto_tel: c.tel || null,
+    contacto_whatsapp: c.whatsapp || null,
+    contacto_email: c.email || null,
+    datos: d
+  }
+  if (!prop.direccion && !prop.link) { toast('La propiedad copiada no tiene dirección ni link', true); return }
+  try {
+    const pid = await bqUpsertPropiedad(prop)
+    await bqVincular(pid, {
+      contactado: ['Pendiente', 'Sí', 'No'].includes(d.colega) ? d.colega : null,
+      reubicacion: d.reub || null,
+      prioridad: ['Alta', 'Media', 'Baja'].includes(d.prio) ? d.prio : null,
+      obs: d.obs || null
+    })
+  } catch (e) {
+    toast('Error al guardar la propiedad: ' + (e.message || e), true)
+  }
+}
+
+function bqAbrirModalProp(vinculoId) {
+  const sel = document.getElementById('bqp-tipo')
+  if (!sel.options.length) sel.innerHTML = '<option value="">Sin definir</option>' + BQ_TIPOS.map(t => `<option>${t}</option>`).join('')
+  const x = vinculoId ? bqProps.find(v => v.id === vinculoId) : null
+  bqEditVinculo = x
+  const p = x ? x.propiedad : {}
+  const set = (id, v) => { document.getElementById(id).value = v == null ? '' : v }
+  set('bqp-link', p.link); set('bqp-direccion', p.direccion); set('bqp-barrio', p.barrio)
+  set('bqp-tipo', p.tipo || ''); set('bqp-operacion', p.operacion || (x ? '' : bqActual?.operacion || ''))
+  set('bqp-precio', p.precio); set('bqp-moneda', p.moneda || 'USD')
+  set('bqp-expensas', p.expensas); set('bqp-exp-moneda', p.exp_moneda || 'ARS')
+  set('bqp-amb', p.amb); set('bqp-dorm', p.dorm); set('bqp-banos', p.banos); set('bqp-cocheras', p.cocheras)
+  set('bqp-sup-cub', p.sup_cub); set('bqp-sup-tot', p.sup_tot); set('bqp-antiguedad', p.antiguedad)
+  set('bqp-anunciante', p.contacto_anunciante); set('bqp-tel', p.contacto_tel || p.contacto_whatsapp); set('bqp-email', p.contacto_email)
+  document.getElementById('bqp-modal-title').textContent = x ? 'Editar propiedad' : 'Agregar propiedad'
+  bqAbrirModal('modal-bq-prop')
+}
+
+async function bqGuardarProp() {
+  const v = id => document.getElementById(id).value.trim()
+  const link = v('bqp-link') || null
+  const tel = v('bqp-tel') || null
+  const prop = {
+    link,
+    portal: link ? (/zonaprop/.test(link) ? 'ZonaProp' : /argenprop/.test(link) ? 'Argenprop' : /mercadolibre/.test(link) ? 'MercadoLibre' : null) : null,
+    direccion: v('bqp-direccion') || null,
+    barrio: v('bqp-barrio') || null,
+    tipo: v('bqp-tipo') || null,
+    operacion: v('bqp-operacion') || null,
+    precio: bqNum(v('bqp-precio')), moneda: v('bqp-moneda'),
+    expensas: bqNum(v('bqp-expensas')), exp_moneda: v('bqp-exp-moneda'),
+    amb: bqInt(v('bqp-amb')), dorm: bqInt(v('bqp-dorm')), banos: bqInt(v('bqp-banos')), cocheras: bqInt(v('bqp-cocheras')),
+    sup_cub: bqNum(v('bqp-sup-cub')), sup_tot: bqNum(v('bqp-sup-tot')), antiguedad: bqInt(v('bqp-antiguedad')),
+    contacto_anunciante: v('bqp-anunciante') || null,
+    contacto_tel: tel,
+    contacto_whatsapp: bqWaNumber(tel) || null,
+    contacto_email: v('bqp-email') || null
+  }
+  if (!prop.direccion && !prop.link) { toast('Indique al menos la dirección o el link', true); return }
+  try {
+    if (bqEditVinculo) {
+      const { error } = await sb.from('propiedades_relevadas').update(prop).eq('id', bqEditVinculo.propiedad_id)
+      if (error) throw error
+      bqCerrarModal('modal-bq-prop')
+      toast('Propiedad actualizada')
+      await bqCargarProps()
+    } else {
+      const pid = await bqUpsertPropiedad(prop)
+      bqCerrarModal('modal-bq-prop')
+      await bqVincular(pid)
+    }
+  } catch (e) {
+    toast('Error: ' + (e.message || e), true)
+  }
+}
+
+// ── alta / edición de búsquedas ───────────────────────────────────
+function bqAbrirModalBusqueda(editar = false) {
+  const b = editar ? bqActual : null
+  bqEditBusqueda = b
+  document.getElementById('bq-modal-title').textContent = b ? 'Editar búsqueda' : 'Nueva búsqueda'
+  document.getElementById('bqf-eliminar').style.display = b ? '' : 'none'
+  bqPrepararFiltros()
+
+  // Asesor: los administradores pueden asignar a cualquiera; el resto, solo a sí mismo
+  const selA = document.getElementById('bqf-asesor')
+  const yo = bqMiAsesor()
+  if (window.isAdmin) {
+    selA.disabled = false
+    selA.innerHTML = (asesoresList || []).filter(a => a.activo !== false && a.mail)
+      .map(a => `<option value="${bqEsc(a.nombre)}">${bqEsc(a.nombre)}</option>`).join('')
+    if (!yo) selA.insertAdjacentHTML('afterbegin', `<option value="">${bqEsc(currentUser?.email || 'Yo')}</option>`)
+    if (b && b.asesor && !Array.from(selA.options).some(o => o.value === b.asesor)) {
+      selA.insertAdjacentHTML('afterbegin', `<option value="${bqEsc(b.asesor)}">${bqEsc(b.asesor)}</option>`)
+    }
+    selA.value = b ? (b.asesor || '') : (yo ? yo.nombre : '')
+  } else {
+    selA.disabled = true
+    const n = bqMiNombre() || currentUser?.email || ''
+    selA.innerHTML = `<option value="${bqEsc(n)}">${bqEsc(n)}</option>`
+  }
+
+  const checks = (cont, opts, marcados) => {
+    document.getElementById(cont).innerHTML = opts.map(o =>
+      `<label><input type="checkbox" value="${bqEsc(o)}" ${(marcados || []).includes(o) ? 'checked' : ''}> ${bqEsc(o)}</label>`).join('')
+  }
+  checks('bqf-tipos', BQ_TIPOS, b ? b.tipos : ['Departamento'])
+  checks('bqf-requisitos', BQ_REQUISITOS, b ? b.requisitos : [])
+
+  const set = (id, v) => { document.getElementById(id).value = v == null ? '' : v }
+  set('bqf-cliente', b?.cliente_nombre); set('bqf-tel', b?.cliente_tel); set('bqf-email', b?.cliente_email)
+  set('bqf-operacion', b?.operacion || 'Venta'); set('bqf-pago', b?.forma_pago || '')
+  set('bqf-barrios', (b?.barrios || []).join(', '))
+  set('bqf-amb-min', b?.amb_min); set('bqf-amb-max', b?.amb_max); set('bqf-dorm-min', b?.dorm_min); set('bqf-sup-min', b?.sup_min)
+  set('bqf-precio-min', b?.precio_min); set('bqf-precio-max', b?.precio_max); set('bqf-moneda', b?.moneda || 'USD')
+  set('bqf-estado', b?.estado || 'Activa'); set('bqf-notas', b?.notas)
+  bqAbrirModal('modal-busqueda')
+  setTimeout(() => document.getElementById('bqf-cliente').focus(), 50)
+}
+
+async function bqGuardarBusqueda() {
+  const v = id => document.getElementById(id).value.trim()
+  const marcados = cont => Array.from(document.querySelectorAll(`#${cont} input:checked`)).map(i => i.value)
+  const cliente = v('bqf-cliente')
+  if (!cliente) { toast('Ingrese el nombre del cliente', true); document.getElementById('bqf-cliente').focus(); return }
+
+  let asesor, asesor_email
+  if (window.isAdmin) {
+    const nombre = v('bqf-asesor')
+    const a = (asesoresList || []).find(x => x.nombre === nombre && x.mail)
+    if (a) { asesor = a.nombre; asesor_email = a.mail.trim().toLowerCase() }
+    else if (bqEditBusqueda && nombre && nombre === bqEditBusqueda.asesor) { asesor = bqEditBusqueda.asesor; asesor_email = bqEditBusqueda.asesor_email }
+    else { asesor = bqMiNombre() || currentUser.email; asesor_email = currentUser.email }
+  } else {
+    asesor = bqMiNombre() || currentUser.email
+    asesor_email = currentUser.email
+  }
+
+  const barrios = v('bqf-barrios').split(',').map(s => s.trim()).filter(Boolean)
+  const payload = {
+    cliente_nombre: cliente,
+    cliente_tel: v('bqf-tel') || null,
+    cliente_email: v('bqf-email') || null,
+    asesor, asesor_email,
+    operacion: v('bqf-operacion'),
+    forma_pago: v('bqf-pago') || null,
+    tipos: marcados('bqf-tipos'),
+    barrios,
+    amb_min: bqInt(v('bqf-amb-min')), amb_max: bqInt(v('bqf-amb-max')),
+    dorm_min: bqInt(v('bqf-dorm-min')), sup_min: bqNum(v('bqf-sup-min')),
+    precio_min: bqNum(v('bqf-precio-min')), precio_max: bqNum(v('bqf-precio-max')),
+    moneda: v('bqf-moneda'),
+    requisitos: marcados('bqf-requisitos'),
+    estado: v('bqf-estado'),
+    notas: v('bqf-notas') || null
+  }
+  if (payload.amb_min && payload.amb_max && payload.amb_min > payload.amb_max) { toast('Los ambientes mínimos superan a los máximos', true); return }
+  if (payload.precio_min && payload.precio_max && payload.precio_min > payload.precio_max) { toast('El presupuesto mínimo supera al máximo', true); return }
+
+  if (bqEditBusqueda) {
+    const { data, error } = await sb.from('busquedas').update(payload).eq('id', bqEditBusqueda.id).select().single()
+    if (error) { toast('Error: ' + error.message, true); return }
+    registrarLog('editar_busqueda', 'busquedas', data.id, { cliente })
+    bqData = bqData.map(b => b.id === data.id ? data : b)
+    bqActual = data
+    bqCerrarModal('modal-busqueda')
+    toast('Búsqueda actualizada')
+    document.getElementById('bq-title').textContent = 'Búsqueda de ' + data.cliente_nombre
+    bqRenderHead()
+    bqCargarSugeridas()
+  } else {
+    const { data, error } = await sb.from('busquedas').insert(payload).select().single()
+    if (error) { toast('Error: ' + error.message, true); return }
+    registrarLog('crear_busqueda', 'busquedas', data.id, { cliente })
+    bqData.unshift(data)
+    bqCerrarModal('modal-busqueda')
+    toast('Búsqueda creada')
+    bqAbrir(data.id)
+  }
+}
+
+async function bqEliminarBusqueda() {
+  const b = bqEditBusqueda
+  if (!b) return
+  if (!confirm(`¿Eliminar la búsqueda de ${b.cliente_nombre}? Se pierde su seguimiento. Las propiedades relevadas siguen disponibles para el equipo.`)) return
+  const { error } = await sb.from('busquedas').delete().eq('id', b.id)
+  if (error) { toast('Error: ' + error.message, true); return }
+  registrarLog('eliminar_busqueda', 'busquedas', b.id, { cliente: b.cliente_nombre })
+  bqCerrarModal('modal-busqueda')
+  toast('Búsqueda eliminada')
+  loadBusquedas()
+}
+</script>
 </body>
 </html>
