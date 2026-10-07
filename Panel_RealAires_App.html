@@ -288,8 +288,14 @@ tr.bq-descartada td { opacity:.55 }
 .bq-checks { display:flex; flex-wrap:wrap; gap:6px 14px; padding-top:2px }
 .bq-checks label { display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:500; color:#374151; text-transform:none; letter-spacing:0; cursor:pointer }
 .bq-checks input { accent-color:#0A0A0A; width:14px; height:14px }
-.bq-inline2 { display:grid; grid-template-columns:1fr 1fr; gap:8px }
-.bq-inline3 { display:grid; grid-template-columns:1fr 1fr 90px; gap:8px }
+.bq-inline2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px }
+.bq-inline3 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) 90px; gap:8px }
+#modal-busqueda .form-grid, #modal-bq-prop .form-grid { grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
+#modal-busqueda .form-group, #modal-bq-prop .form-group { min-width:0 }
+#modal-busqueda input, #modal-busqueda select, #modal-busqueda textarea,
+#modal-bq-prop input, #modal-bq-prop select, #modal-bq-prop textarea { width:100%; min-width:0; box-sizing:border-box }
+#modal-busqueda .bq-checks input, #modal-bq-prop .bq-checks input { width:14px }
+@media (max-width:768px) { #modal-busqueda .form-grid, #modal-bq-prop .form-grid { grid-template-columns:minmax(0,1fr) } }
 .bq-sug-item { display:flex; align-items:center; gap:12px; padding:10px 1.25rem; border-bottom:1px solid #F3F4F6 }
 .bq-sug-item:last-child { border-bottom:none }
 .bq-sug-main { flex:1; min-width:0 }
@@ -6139,8 +6145,8 @@ function renderZpZona(sufijo, datos) {
         <div class="form-group"><label>Barrio</label><input id="bqp-barrio" list="bq-barrios-list"></div>
         <div class="form-group"><label>Tipo</label><select id="bqp-tipo"></select></div>
         <div class="form-group"><label>Operación</label><select id="bqp-operacion"><option value="">Sin definir</option><option>Venta</option><option>Alquiler</option></select></div>
-        <div class="form-group"><label>Precio / moneda</label><div class="bq-inline2" style="grid-template-columns:1fr 90px"><input id="bqp-precio" type="number"><select id="bqp-moneda"><option value="USD">USD</option><option value="ARS">$</option></select></div></div>
-        <div class="form-group"><label>Expensas / moneda</label><div class="bq-inline2" style="grid-template-columns:1fr 90px"><input id="bqp-expensas" type="number"><select id="bqp-exp-moneda"><option value="ARS">$</option><option value="USD">USD</option></select></div></div>
+        <div class="form-group"><label>Precio / moneda</label><div class="bq-inline2" style="grid-template-columns:minmax(0,1fr) 90px"><input id="bqp-precio" type="number"><select id="bqp-moneda"><option value="USD">USD</option><option value="ARS">$</option></select></div></div>
+        <div class="form-group"><label>Expensas / moneda</label><div class="bq-inline2" style="grid-template-columns:minmax(0,1fr) 90px"><input id="bqp-expensas" type="number"><select id="bqp-exp-moneda"><option value="ARS">$</option><option value="USD">USD</option></select></div></div>
         <div class="form-group"><label>Ambientes / dormitorios</label><div class="bq-inline2"><input id="bqp-amb" type="number" placeholder="Amb."><input id="bqp-dorm" type="number" placeholder="Dorm."></div></div>
         <div class="form-group"><label>Baños / cocheras</label><div class="bq-inline2"><input id="bqp-banos" type="number" placeholder="Baños"><input id="bqp-cocheras" type="number" placeholder="Coch."></div></div>
         <div class="form-group"><label>Sup. cubierta / total m²</label><div class="bq-inline2"><input id="bqp-sup-cub" type="number" placeholder="Cub."><input id="bqp-sup-tot" type="number" placeholder="Total"></div></div>
