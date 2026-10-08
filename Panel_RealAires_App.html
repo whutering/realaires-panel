@@ -789,21 +789,21 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
               <thead>
                 <tr>
                   <th>#</th><th>Asesor</th><th>Antigüedad</th><th>Trans. activas</th>
-                  <th>Trans. realizadas (año)</th><th>Com. cobradas (año)</th><th>Prelisting</th><th>Captaciones</th><th>% Conv.</th><th>Objetivo anual</th><th>Rendimiento</th><th></th>
+                  <th>Trans. realizadas (año)</th><th>Com. cobradas (año)</th><th title="Búsquedas activas que trabaja el asesor">Prebuying</th><th>Prelisting</th><th>Captaciones</th><th>% Conv.</th><th>Objetivo anual</th><th>Rendimiento</th><th></th>
                 </tr>
               </thead>
               <tbody id="asesores-tbody">
-                <tr><td colspan="12" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
+                <tr><td colspan="13" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
         <div style="margin-top:1rem;padding:0.875rem 1.25rem;background:#F9FAFB;border-radius:8px;border:1px solid #E5E7EB;font-size:11.5px;color:#6B7280;display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center">
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16A34A;margin-right:4px"></span><strong>Activo:</strong> 10+ trans./año</span>
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#D97706;margin-right:4px"></span><strong>En seguimiento:</strong> 4–9 trans./año</span>
-          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#DC2626;margin-right:4px"></span><strong>Crítico:</strong> menos de 4 trans./año</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#16A34A;margin-right:4px"></span><strong>Rendimiento alto:</strong> 10+ trans./año</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#D97706;margin-right:4px"></span><strong>Rendimiento medio:</strong> 4–9 trans./año</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#DC2626;margin-right:4px"></span><strong>Rendimiento bajo:</strong> menos de 4 trans./año</span>
           <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#9CA3AF;margin-right:4px"></span><strong>En formación:</strong> primeros 6 meses</span>
-          <span style="color:#9CA3AF;font-size:11px">(umbrales proporcionales al mes actual · no aplica a socios)</span>
+          <span style="color:#9CA3AF;font-size:11px">(umbrales proporcionales al mes actual · no aplica a socios · Prebuying: búsquedas activas)</span>
         </div>
       </div>
     </div>
@@ -3291,6 +3291,7 @@ async function loadAsesoresPage() {
   const anio = (document.getElementById('filter-anio-asesores')?.value) || '2026'
   const { data: ventas } = await sb.from('ventas').select('*')
   const { data: fichasAll } = await sb.from('fichas').select('asesor,captado,fecha')
+  const { data: busquedasAct } = await sb.from('busquedas').select('asesor,asesor_email').eq('estado', 'Activa')
   const v = ventas || []
   const vFiltrado = anio === 'todos' ? v : v.filter(r => {
     if (!r.fecha_op) return false
@@ -3310,7 +3311,15 @@ async function loadAsesoresPage() {
   }
 
   const stats = {}
-  asesoresList.filter(a => a.activo !== false).forEach(a => { stats[a.nombre] = {real:0,cur:0,cai:0,com:0,pipe:0,prelisting:0,captaciones:0,fecha_inicio:a.fecha_inicio,mail:a.mail,telefono:a.telefono} })
+  asesoresList.filter(a => a.activo !== false).forEach(a => { stats[a.nombre] = {real:0,cur:0,cai:0,com:0,pipe:0,prebuying:0,prelisting:0,captaciones:0,fecha_inicio:a.fecha_inicio,mail:a.mail,telefono:a.telefono} })
+
+  // Prebuying: búsquedas activas que trabaja cada asesor (estado actual, no depende del año)
+  const nombrePorMail = {}
+  asesoresList.forEach(a => { if (a.mail) nombrePorMail[a.mail.toLowerCase()] = a.nombre })
+  ;(busquedasAct || []).forEach(b => {
+    const nm = (b.asesor && stats[b.asesor]) ? b.asesor : nombrePorMail[(b.asesor_email || '').toLowerCase()]
+    if (nm && stats[nm]) stats[nm].prebuying++
+  })
 
   // Calcular prelisting y captaciones desde fichas (filtrado por año si aplica)
   window._fichasAllData = fichasAll || []
@@ -3399,6 +3408,7 @@ async function loadAsesoresPage() {
       +'<td style="text-align:center;font-weight:700;color:#0A0A0A">'+s.cur+'</td>'
       +'<td style="text-align:center;font-weight:700;color:#16A34A">'+s.real+'</td>'
       +'<td style="font-weight:700;color:#16A34A">'+(com?'USD '+Math.round(com).toLocaleString('es-AR'):'—')+'</td>'
+      +'<td style="text-align:center;font-weight:700;color:#2563EB">'+s.prebuying+'</td>'
       +'<td style="text-align:center;font-weight:700;color:#7C3AED">'+s.prelisting+'</td>'
       +'<td style="text-align:center;font-weight:700;color:#15803D">'+s.captaciones+'</td>'
       +(()=>{
@@ -3455,15 +3465,15 @@ function openAsesorDetail(nombre) {
       transLabel='Primeros 3 meses — sin evaluación'
     } else if (meses !== null && meses < 6) {
       const ok = s.cur>=1||s.real>=1
-      color = ok?'#D97706':'#DC2626'; label = ok?'En seguimiento':'Crítico'; pctB = ok?40:10
+      color = ok?'#D97706':'#DC2626'; label = ok?'Rendimiento medio':'Rendimiento bajo'; pctB = ok?40:10
       transLabel = (s.real||0)+' trans. realizadas · '+(s.cur||0)+' activas'
       umbralLabel = 'Período inicial (3–6 meses)'
     } else {
       const r = s.real||0
-      if (r >= umbralActivo)  { color='#16A34A'; label='Activo';         pctB=Math.min(100,Math.round(r/umbralActivo*100)) }
-      else if (r >= umbralSeg){ color='#D97706'; label='En seguimiento'; pctB=Math.round(r/umbralActivo*100) }
-      else                    { color='#DC2626'; label='Crítico';        pctB=Math.max(5,Math.round(r/Math.max(umbralSeg,1)*40)) }
-      transLabel = r+' trans. realizadas (necesita '+umbralActivo+' para Activo)'
+      if (r >= umbralActivo)  { color='#16A34A'; label='Rendimiento alto';  pctB=Math.min(100,Math.round(r/umbralActivo*100)) }
+      else if (r >= umbralSeg){ color='#D97706'; label='Rendimiento medio'; pctB=Math.round(r/umbralActivo*100) }
+      else                    { color='#DC2626'; label='Rendimiento bajo';  pctB=Math.max(5,Math.round(r/Math.max(umbralSeg,1)*40)) }
+      transLabel = r+' trans. realizadas (necesita '+umbralActivo+' para rendimiento alto)'
       umbralLabel = 'Meta proporcional: '+umbralActivo+' trans.'
     }
 
