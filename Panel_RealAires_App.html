@@ -137,6 +137,15 @@ tr:hover td { background: #FAFBFC; }
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue); }
 .form-group textarea { resize: vertical; min-height: 72px; }
+.mc-bloque { border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin-bottom:12px; }
+.mc-fila { display:flex; align-items:center; gap:12px; }
+.mc-icono { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.mc-nombre { font-size:14px; font-weight:700; color:var(--navy); }
+.mc-desc { font-size:12px; color:#6B7280; margin-top:1px; line-height:1.4; }
+.mc-btn { padding:8px 14px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer; border:1.5px solid #0A0A0A; background:#0A0A0A; color:#fff; white-space:nowrap; }
+.mc-btn.sec { background:#fff; color:#0A0A0A; border-color:var(--border); }
+.mc-ok { display:inline-flex; align-items:center; gap:5px; padding:6px 11px; border-radius:20px; background:#DCFCE7; color:#15803D; font-size:12px; font-weight:700; white-space:nowrap; }
+@media (max-width:520px){ .mc-fila { flex-wrap:wrap; } }
 .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
 .btn-cancel { padding: 9px 18px; background: var(--white); border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--gray); }
 .btn-cancel:hover { border-color: var(--navy); color: var(--navy); }
@@ -1604,7 +1613,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
 
 <!-- MODAL MI CUENTA -->
 <div class="modal-overlay" id="modal-mi-cuenta" style="z-index:600">
-  <div class="modal" style="max-width:460px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-header">
       <h2 id="mc-title">Mi cuenta</h2>
       <button class="modal-close" id="mc-close" onclick="closeModal('mi-cuenta')">×</button>
@@ -1613,19 +1622,59 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
       <div id="mc-recovery-msg" style="display:none;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E40AF;border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:14px">
         Ingresaste con el enlace de restablecimiento. Definí tu nueva contraseña para continuar.
       </div>
-      <div style="font-size:12px;color:#6B7280;margin-bottom:14px">Cuenta: <strong id="mc-email" style="color:#0F1F3D"></strong></div>
-      <div class="form-grid">
-        <div class="form-group full"><label>Nueva contraseña</label><input type="password" id="mc-pass1" autocomplete="new-password" placeholder="Mínimo 8 caracteres" /></div>
-        <div class="form-group full"><label>Repetir contraseña</label><input type="password" id="mc-pass2" autocomplete="new-password" /></div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:14px">Cuenta del panel: <strong id="mc-email" style="color:#0F1F3D"></strong></div>
+
+      <!-- Contraseña -->
+      <div class="mc-bloque" id="mc-bloque-pass">
+        <div class="mc-fila">
+          <div class="mc-icono" style="background:#F3F4F6">🔒</div>
+          <div style="flex:1">
+            <div class="mc-nombre">Contraseña</div>
+            <div class="mc-desc">Cambiala cuando quieras o pedí un enlace por correo.</div>
+          </div>
+          <button class="mc-btn" id="mc-btn-pass" onclick="toggleCambioPass()">Cambiar contraseña</button>
+        </div>
+        <div id="mc-pass-form" style="display:none;margin-top:12px">
+          <div class="form-grid">
+            <div class="form-group full"><label>Nueva contraseña</label><input type="password" id="mc-pass1" autocomplete="new-password" placeholder="Mínimo 8 caracteres" /></div>
+            <div class="form-group full"><label>Repetir contraseña</label><input type="password" id="mc-pass2" autocomplete="new-password" /></div>
+          </div>
+          <div id="mc-msg" style="display:none;font-size:12.5px;margin-top:10px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+            <a href="#" id="mc-reset-link" onclick="enviarResetMiCuenta();return false" style="color:#2563EB;font-size:12.5px;font-weight:600">Enviarme un enlace por correo</a>
+            <button class="btn-save" id="mc-guardar" onclick="guardarNuevaPassword()">Guardar contraseña</button>
+          </div>
+        </div>
       </div>
-      <div id="mc-msg" style="display:none;font-size:12.5px;margin-top:10px"></div>
-      <div id="mc-reset-block" style="margin-top:16px;padding-top:14px;border-top:1px solid #F3F4F6;font-size:12.5px;color:#6B7280">
-        ¿Preferís hacerlo por correo? <a href="#" onclick="enviarResetMiCuenta();return false" style="color:#2563EB;font-weight:600">Enviarme un enlace para restablecerla</a>
+
+      <!-- Google -->
+      <div id="mc-google">
+        <div class="mc-bloque">
+          <div class="mc-fila">
+            <div class="mc-icono" style="background:#EFF6FF">📅</div>
+            <div style="flex:1">
+              <div class="mc-nombre">Google Calendar</div>
+              <div class="mc-desc" id="mc-cal-desc">Las firmas y visitas que agendes se crean solas en tu calendario.</div>
+            </div>
+            <div id="mc-cal-accion"></div>
+          </div>
+        </div>
+        <div class="mc-bloque">
+          <div class="mc-fila">
+            <div class="mc-icono" style="background:#FEF2F2">✉️</div>
+            <div style="flex:1">
+              <div class="mc-nombre">Gmail</div>
+              <div class="mc-desc" id="mc-gmail-desc">Para enviar informes y avisos desde tu propia casilla. El panel no lee tus correos.</div>
+            </div>
+            <div id="mc-gmail-accion"></div>
+          </div>
+        </div>
+        <div id="mc-google-pie" style="display:none;font-size:12px;color:#6B7280;margin-top:4px">
+          Cuenta de Google vinculada: <strong id="mc-google-email" style="color:#374151"></strong> ·
+          <a href="#" onclick="desconectarGoogle();return false" style="color:#DC2626;font-weight:600">Desconectar</a>
+        </div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:10px"><a href="privacidad.html" target="_blank" style="color:#9CA3AF">Política de privacidad</a></div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" id="mc-cancel" onclick="closeModal('mi-cuenta')">Cancelar</button>
-      <button class="btn-save" id="mc-guardar" onclick="guardarNuevaPassword()">Guardar contraseña</button>
     </div>
   </div>
 </div>
@@ -1932,6 +1981,8 @@ async function initApp() {
   loadAlquileres()
   loadDashboard()
   if (window.isAdmin) { loadAsesoresPage(); loadReportesCount() }
+  cargarEstadoGoogle()
+  procesarVueltaGoogle()
 }
 
 function applyRoleUI() {
@@ -6429,7 +6480,37 @@ function agendarFirma() {
     details: detalles,
     location: lugar
   })
-  window.open('https://calendar.google.com/calendar/render?' + params.toString(), '_blank', 'noopener')
+  const urlPlantilla = 'https://calendar.google.com/calendar/render?' + params.toString()
+  crearEventoGoogle({
+    titulo: params.get('text'),
+    inicio: `${fecha}T${hora}:00`,
+    fin: `${fechaFin}T${fin}:00`,
+    lugar,
+    descripcion: detalles
+  }, urlPlantilla)
+}
+
+// Crea el evento directo en el calendario si está conectado; si no, abre Google Calendar para confirmarlo
+async function crearEventoGoogle(ev, urlPlantilla) {
+  if (!window._googleCon?.calendar) { window.open(urlPlantilla, '_blank', 'noopener'); return }
+  const btn = document.getElementById('btn-agendar-firma')
+  if (btn) btn.disabled = true
+  try {
+    const res = await _callEdgeFn('google-oauth-callback', { accion: 'evento', ...ev })
+    const data = await res.json()
+    if (!res.ok) {
+      if (data.reconectar) { window._googleCon.calendar = false; toast('Tu Google Calendar se desconectó. Volvé a conectarlo desde Mi cuenta.', true) }
+      else toast('No se pudo crear el evento: ' + (data.error || ''), true)
+      window.open(urlPlantilla, '_blank', 'noopener')
+      return
+    }
+    registrarLog('agendar_google', 'ventas', document.getElementById('v-id')?.value || null, { titulo: ev.titulo, inicio: ev.inicio })
+    toast('Evento agendado en tu Google Calendar')
+  } catch (e) {
+    window.open(urlPlantilla, '_blank', 'noopener')
+  } finally {
+    if (btn) btn.disabled = false
+  }
 }
 
 // ── REPORTES DE ASESORES ───────────────────────────────────────────
@@ -6552,8 +6633,9 @@ function abrirOpDesdeReporte(ventaId) {
   editVenta(op)
 }
 
-// ── MI CUENTA: CAMBIO Y RESTABLECIMIENTO DE CONTRASEÑA ─────────────
+// ── MI CUENTA: CONTRASEÑA Y CONEXIÓN CON GOOGLE ─────────────────
 let _modoRecuperacion = false
+window._googleCon = null   // { calendar, gmail, google_email } del usuario actual
 
 function openMiCuenta(recuperacion) {
   _modoRecuperacion = !!recuperacion
@@ -6562,12 +6644,26 @@ function openMiCuenta(recuperacion) {
   document.getElementById('mc-pass2').value = ''
   document.getElementById('mc-msg').style.display = 'none'
   document.getElementById('mc-recovery-msg').style.display = _modoRecuperacion ? 'block' : 'none'
-  document.getElementById('mc-reset-block').style.display = _modoRecuperacion ? 'none' : 'block'
-  document.getElementById('mc-close').style.display  = _modoRecuperacion ? 'none' : ''
-  document.getElementById('mc-cancel').style.display = _modoRecuperacion ? 'none' : ''
+  document.getElementById('mc-close').style.display = _modoRecuperacion ? 'none' : ''
   document.getElementById('mc-title').textContent = _modoRecuperacion ? 'Nueva contraseña' : 'Mi cuenta'
+  document.getElementById('mc-google').style.display = _modoRecuperacion ? 'none' : ''
+  document.getElementById('mc-reset-link').style.display = _modoRecuperacion ? 'none' : ''
+  document.getElementById('mc-btn-pass').style.display = _modoRecuperacion ? 'none' : ''
+  document.getElementById('mc-pass-form').style.display = _modoRecuperacion ? 'block' : 'none'
+  document.getElementById('mc-btn-pass').textContent = 'Cambiar contraseña'
   document.getElementById('modal-mi-cuenta').classList.add('open')
-  setTimeout(() => document.getElementById('mc-pass1').focus(), 50)
+  if (_modoRecuperacion) setTimeout(() => document.getElementById('mc-pass1').focus(), 50)
+  else cargarEstadoGoogle()
+}
+
+function toggleCambioPass() {
+  const form = document.getElementById('mc-pass-form')
+  const abrir = form.style.display === 'none'
+  form.style.display = abrir ? 'block' : 'none'
+  document.getElementById('mc-btn-pass').textContent = abrir ? 'Cancelar' : 'Cambiar contraseña'
+  document.getElementById('mc-btn-pass').className = abrir ? 'mc-btn sec' : 'mc-btn'
+  document.getElementById('mc-msg').style.display = 'none'
+  if (abrir) setTimeout(() => document.getElementById('mc-pass1').focus(), 50)
 }
 
 function _mcMsg(txt, ok) {
@@ -6591,11 +6687,12 @@ async function guardarNuevaPassword() {
     return
   }
   registrarLog('cambiar_password', 'usuarios', currentUser?.email, null)
+  const eraRecuperacion = _modoRecuperacion
   _modoRecuperacion = false
-  closeModal('mi-cuenta')
-  // Limpiar el token del enlace de recuperación de la barra de direcciones
   if (location.hash) history.replaceState(null, '', location.pathname + location.search)
   toast('Contraseña actualizada')
+  if (eraRecuperacion) closeModal('mi-cuenta')
+  else { toggleCambioPass() }
 }
 
 async function enviarResetMiCuenta() {
@@ -6603,6 +6700,76 @@ async function enviarResetMiCuenta() {
   if (!email) return
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname })
   _mcMsg(error ? 'No se pudo enviar el correo: ' + error.message : `Te enviamos un enlace a ${email} para restablecer la contraseña.`, !error)
+}
+
+// ── Google ────────────────────────────────────────────────────────
+async function cargarEstadoGoogle() {
+  if (!currentUser) return null
+  const { data, error } = await sb.from('google_conexiones')
+    .select('calendar, gmail, google_email').eq('user_id', currentUser.id).maybeSingle()
+  window._googleCon = error ? null : (data || { calendar: false, gmail: false, google_email: null })
+  renderEstadoGoogle(!!error)
+  return window._googleCon
+}
+
+function renderEstadoGoogle(fallo) {
+  const con = window._googleCon || {}
+  const pinta = (id, conectado, servicio) => {
+    const el = document.getElementById(id)
+    if (!el) return
+    if (fallo) { el.innerHTML = '<span style="font-size:11.5px;color:#9CA3AF">No disponible</span>'; return }
+    el.innerHTML = conectado
+      ? '<span class="mc-ok">✓ Conectado</span>'
+      : `<button class="mc-btn" onclick="conectarGoogle('${servicio}', this)">Conectar</button>`
+  }
+  pinta('mc-cal-accion', con.calendar, 'calendar')
+  pinta('mc-gmail-accion', con.gmail, 'gmail')
+  const pie = document.getElementById('mc-google-pie')
+  if (pie) {
+    pie.style.display = (con.calendar || con.gmail) ? 'block' : 'none'
+    document.getElementById('mc-google-email').textContent = con.google_email || ''
+  }
+}
+
+async function conectarGoogle(servicio, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Abriendo Google...' }
+  try {
+    const res = await _callEdgeFn('google-oauth-callback', { accion: 'iniciar', servicio })
+    const data = await res.json()
+    if (!res.ok || !data.url) throw new Error(data.error || 'No se pudo iniciar la conexión')
+    window.location.href = data.url
+  } catch (e) {
+    toast('No se pudo conectar con Google: ' + e.message, true)
+    if (btn) { btn.disabled = false; btn.textContent = 'Conectar' }
+  }
+}
+
+async function desconectarGoogle() {
+  if (!confirm('¿Desconectar tu cuenta de Google? Se quitan los permisos de Calendar y Gmail. Podés volver a conectarla cuando quieras.')) return
+  try {
+    const res = await _callEdgeFn('google-oauth-callback', { accion: 'desconectar' })
+    if (!res.ok) throw new Error()
+    registrarLog('desconectar_google', 'usuarios', currentUser?.email, null)
+    toast('Cuenta de Google desconectada')
+  } catch (e) { toast('No se pudo desconectar. Intentá de nuevo.', true) }
+  cargarEstadoGoogle()
+}
+
+// Vuelta desde Google: ?google=ok|cancelado|sin_permiso|error&servicio=...
+function procesarVueltaGoogle() {
+  const q = new URLSearchParams(location.search)
+  const res = q.get('google')
+  if (!res) return
+  const nombre = q.get('servicio') === 'gmail' ? 'Gmail' : 'Google Calendar'
+  const msgs = {
+    ok:          [`${nombre} conectado correctamente`, false],
+    cancelado:   [`Se canceló la conexión con ${nombre}`, true],
+    sin_permiso: [`Para conectar ${nombre} hay que tildar el permiso en la pantalla de Google`, true],
+    error:       [`No se pudo conectar ${nombre}. Intentá de nuevo.`, true],
+  }
+  const [txt, err] = msgs[res] || msgs.error
+  history.replaceState(null, '', location.pathname + location.hash)
+  setTimeout(() => { toast(txt, err); openMiCuenta() }, 600)
 }
 </script>
 
