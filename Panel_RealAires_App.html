@@ -385,6 +385,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
     </nav>
     <div class="sidebar-footer">
       <div class="user-info" id="user-email-display"></div>
+      <button class="btn-logout" onclick="openMiCuenta()" style="margin-bottom:6px">Mi cuenta</button>
       <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
     </div>
   </div>
@@ -451,6 +452,12 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
           <button id="btn-toggle-mapa" onclick="toggleMapaVentas()" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
             Ver mapa
+          </button>
+          <button id="btn-reportes-admin" onclick="openReportesAdmin()" style="display:none;background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;align-items:center;gap:6px">
+            Reportes <span id="reportes-badge" style="display:none;background:#DC2626;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;font-weight:700"></span>
+          </button>
+          <button id="btn-dups-admin" onclick="openDuplicados()" style="display:none;background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">
+            Duplicados
           </button>
           <button id="btn-nueva-op" class="btn-add" onclick="openModal('ventas')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1451,7 +1458,9 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
     <div class="modal-body">
       <input type="hidden" id="v-id" />
       <div class="form-grid">
-        <div class="form-group full"><label>Inmueble *</label><input id="v-inmueble" placeholder="Ej: Av. Córdoba 1234 2°B" /></div>
+        <div class="form-group full"><label>Inmueble *</label><input id="v-inmueble" placeholder="Ej: Av. Córdoba 1234 2°B" oninput="programarChequeoDuplicados()" />
+          <div id="v-dup-aviso" style="display:none;margin-top:6px;padding:9px 12px;border-radius:8px;font-size:12px;line-height:1.45"></div>
+        </div>
         <div class="form-group"><label>Estado *</label>
           <select id="v-estado">
             <option>En curso</option>
@@ -1489,8 +1498,16 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
           </select>
         </div>
         <div class="form-group full" id="v-venc-conf-preview" style="margin-top:-8px;font-size:12px;color:#6B7280"></div>
-        <div class="form-group"><label>Fecha de operación</label><input type="date" id="v-fecha-op" /></div>
-        <div class="form-group"><label>Lugar de firma</label><input id="v-lugar-firma" placeholder="Escribanía..." /></div>
+        <div class="form-group"><label>Fecha de operación</label><input type="date" id="v-fecha-op" oninput="actualizarAgendarBtn()" /></div>
+        <div class="form-group" style="position:relative"><label>Lugar de firma</label>
+          <input id="v-lugar-firma" placeholder="Escribí la dirección o escribanía..." autocomplete="off" />
+          <div id="v-lugar-firma-sug" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #D1D5DB;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.15);z-index:50;max-height:220px;overflow-y:auto"></div>
+          <div id="v-lugar-firma-estado" style="font-size:11px;color:#6B7280;min-height:14px"></div>
+        </div>
+        <div class="form-group"><label>Horario de firma</label>
+          <input type="time" id="v-hora-firma" step="900" oninput="actualizarAgendarBtn()" />
+          <div id="v-hora-firma-fin" style="font-size:11px;color:#6B7280;min-height:14px"></div>
+        </div>
         <div class="form-group"><label>Boleto / Escritura</label><select id="v-boleto"><option value="">—</option><option>Boleto</option><option>Escritura</option><option>Pendiente</option></select></div>
         <div class="form-group"><label>Informes</label><select id="v-informes"><option value="">—</option><option>Solicitado</option><option>Pendiente</option></select></div>
         <div class="form-group"><label>Fecha de informes</label><input type="date" id="v-fecha-informes" /></div>
@@ -1508,11 +1525,107 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
           onclick="openLiquidacion('comprador')">📄 Liq. Comprador</button>
         <button id="btn-liq-externa" class="btn-cancel" style="border-color:#7C3AED;color:#7C3AED;display:none"
           onclick="openLiquidacionExterna()">🤝 Liq. Inmob. Externa</button>
+        <button id="btn-agendar-firma" class="btn-cancel" style="border-color:#2563EB;color:#2563EB;display:none"
+          onclick="agendarFirma()" title="Crear el evento de firma en Google Calendar">📅 Agendar firma</button>
+        <button id="btn-reportar-venta" class="btn-cancel" style="border-color:#D97706;color:#D97706;display:none"
+          onclick="openReporteDesdeModal()">⚠️ Reportar corrección</button>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn-cancel" onclick="closeModal('ventas')">Cancelar</button>
         <button class="btn-save" onclick="saveVenta()">Guardar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REPORTE DE OPERACIÓN (asesores) -->
+<div class="modal-overlay" id="modal-reporte" style="z-index:400">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h2>Reportar corrección</h2>
+      <button class="modal-close" onclick="closeModal('reporte')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:10px 14px;margin-bottom:14px">
+        <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600">Operación</div>
+        <div id="rep-inmueble" style="font-size:14px;font-weight:700;color:#0F1F3D;margin-top:2px"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full"><label>¿Qué hay que corregir?</label>
+          <select id="rep-categoria">
+            <option>Datos del inmueble</option>
+            <option>Montos o comisión</option>
+            <option>Fechas (reserva, conformidad, escritura)</option>
+            <option>Asesores asignados</option>
+            <option>Estado de la operación</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>Detalle *</label>
+          <textarea id="rep-detalle" rows="5" placeholder="Contá qué dato está mal y cuál sería el correcto..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('reporte')">Cancelar</button>
+      <button class="btn-save" id="rep-enviar" onclick="enviarReporte()">Enviar reporte</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REPORTES (admin) -->
+<div class="modal-overlay" id="modal-reportes-admin">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2>Reportes de asesores</h2>
+      <button class="modal-close" onclick="closeModal('reportes-admin')">×</button>
+    </div>
+    <div class="modal-body" style="padding:1rem 1.5rem">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6B7280;margin-bottom:10px;cursor:pointer">
+        <input type="checkbox" id="rep-ver-resueltos" onchange="renderReportesAdmin()"> Mostrar también los resueltos
+      </label>
+      <div id="reportes-admin-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DUPLICADOS (admin) -->
+<div class="modal-overlay" id="modal-duplicados">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h2>Posibles operaciones duplicadas</h2>
+      <button class="modal-close" onclick="closeModal('duplicados')">×</button>
+    </div>
+    <div class="modal-body" style="padding:1rem 1.5rem">
+      <div id="duplicados-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MI CUENTA -->
+<div class="modal-overlay" id="modal-mi-cuenta" style="z-index:600">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2 id="mc-title">Mi cuenta</h2>
+      <button class="modal-close" id="mc-close" onclick="closeModal('mi-cuenta')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="mc-recovery-msg" style="display:none;background:#EFF6FF;border:1px solid #BFDBFE;color:#1E40AF;border-radius:8px;padding:10px 12px;font-size:12.5px;margin-bottom:14px">
+        Ingresaste con el enlace de restablecimiento. Definí tu nueva contraseña para continuar.
+      </div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:14px">Cuenta: <strong id="mc-email" style="color:#0F1F3D"></strong></div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Nueva contraseña</label><input type="password" id="mc-pass1" autocomplete="new-password" placeholder="Mínimo 8 caracteres" /></div>
+        <div class="form-group full"><label>Repetir contraseña</label><input type="password" id="mc-pass2" autocomplete="new-password" /></div>
+      </div>
+      <div id="mc-msg" style="display:none;font-size:12.5px;margin-top:10px"></div>
+      <div id="mc-reset-block" style="margin-top:16px;padding-top:14px;border-top:1px solid #F3F4F6;font-size:12.5px;color:#6B7280">
+        ¿Preferís hacerlo por correo? <a href="#" onclick="enviarResetMiCuenta();return false" style="color:#2563EB;font-weight:600">Enviarme un enlace para restablecerla</a>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="mc-cancel" onclick="closeModal('mi-cuenta')">Cancelar</button>
+      <button class="btn-save" id="mc-guardar" onclick="guardarNuevaPassword()">Guardar contraseña</button>
     </div>
   </div>
 </div>
@@ -1786,6 +1899,9 @@ const ADMIN_EMAILS = [
 ]
 
 sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') setTimeout(() => openMiCuenta(true), 300)
+  // Cambios de token o de contraseña no requieren recargar todo el panel
+  if (session && (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') && document.getElementById('app').style.display === 'block') return
   if (session) {
     currentUser = session.user
     // Determinar rol: user_metadata tiene prioridad; si no, verificar por email
@@ -1815,7 +1931,7 @@ async function initApp() {
   loadVentas()
   loadAlquileres()
   loadDashboard()
-  if (window.isAdmin) loadAsesoresPage()
+  if (window.isAdmin) { loadAsesoresPage(); loadReportesCount() }
 }
 
 function applyRoleUI() {
@@ -1827,6 +1943,10 @@ function applyRoleUI() {
   // Ocultar botón "Nueva operación" para usuarios
   const btnNuevaOp = document.getElementById('btn-nueva-op')
   if (btnNuevaOp) btnNuevaOp.style.display = isAdmin ? '' : 'none'
+  const btnRepAdm = document.getElementById('btn-reportes-admin')
+  if (btnRepAdm) btnRepAdm.style.display = isAdmin ? 'inline-flex' : 'none'
+  const btnDups = document.getElementById('btn-dups-admin')
+  if (btnDups) btnDups.style.display = isAdmin ? '' : 'none'
   // Badge de rol en sidebar (limpiar antes de insertar para evitar duplicados)
   // Mostrar sidebar recién después de aplicar el rol (evita flash de menú admin)
   const sidebar = document.getElementById('main-sidebar')
@@ -1892,7 +2012,7 @@ function switchOpTab(tab) {
     }
   }
   // Load data on first switch
-  if (isVentas && (!window.ventasData || window.ventasData.length === 0)) loadVentas()
+  if (isVentas && (!ventasData || ventasData.length === 0)) loadVentas()
   if (!isVentas && typeof loadAlquileres === 'function') loadAlquileres()
 }
 
@@ -1984,6 +2104,8 @@ async function loadVentas() {
   }
   ventasData = sortVentas(rows)
   filterVentas()
+  // Si el mapa está abierto, redibujar pins (así una operación borrada o modificada no deja su pin)
+  if (typeof mapaVisible !== 'undefined' && mapaVisible && typeof renderMapaPins === 'function') renderMapaPins()
   // Pre-geocodificar en background para que el mapa cargue instantáneo
   preGeocodeVentas()
 }
@@ -2116,7 +2238,8 @@ function renderVentas(rows) {
         ${window.isAdmin
           ? `<button class="action-btn" onclick="editVenta(window._ventasRender[${idx}])">Editar</button>
              <button class="action-btn del" onclick="deleteVenta(${r.id})">✕</button>`
-          : `<button class="action-btn" onclick="verVenta(window._ventasRender[${idx}])">Ver</button>`
+          : `<button class="action-btn" onclick="verVenta(window._ventasRender[${idx}])">Ver</button>
+             <button class="action-btn" style="border-color:#FCD34D;color:#B45309" onclick="openReporte(window._ventasRender[${idx}])">Reportar</button>`
         }
       </td>
     </tr>`
@@ -2168,7 +2291,15 @@ function openModal(type) {
     document.getElementById('btn-delete-venta').style.display = 'none'
     document.getElementById('btn-liq-vendedor').style.display = 'none'
     document.getElementById('btn-liq-comprador').style.display = 'none'
-    document.getElementById('btn-liq-externa').style.display = 'none'  } else {
+    document.getElementById('btn-liq-externa').style.display = 'none'
+    document.getElementById('btn-reportar-venta').style.display = 'none'
+    document.getElementById('v-hora-firma').value = ''
+    setLugarFirmaVerificado(null)
+    window._lugarFirmaOriginal = ''
+    ocultarAvisoDuplicados()
+    actualizarAgendarBtn()
+    initLugarFirmaAutocomplete()
+  } else {
     document.getElementById('a-id').value = ''
     document.getElementById('modal-alq-title').textContent = 'Nuevo Alquiler'
     ;['a-inmueble','a-notas'].forEach(id => document.getElementById(id).value = '')
@@ -2230,6 +2361,13 @@ function editVenta(r) {
   renderVencimientoPreview()
   document.getElementById('v-fecha-op').value = r.fecha_op||''
   document.getElementById('v-lugar-firma').value = r.lugar_firma||''
+  window._lugarFirmaOriginal = r.lugar_firma || ''
+  setLugarFirmaVerificado(r.lugar_firma_place_id ? { placeId: r.lugar_firma_place_id, lat: r.lugar_firma_lat, lng: r.lugar_firma_lng } : null, !!r.lugar_firma)
+  document.getElementById('v-hora-firma').value = r.hora_firma ? String(r.hora_firma).slice(0,5) : ''
+  document.getElementById('btn-reportar-venta').style.display = 'none'
+  ocultarAvisoDuplicados()
+  actualizarAgendarBtn()
+  initLugarFirmaAutocomplete()
   document.getElementById('v-boleto').value = r.boleto_escritura||''
   document.getElementById('v-informes').value = r.informes||''
   document.getElementById('v-fecha-informes').value = r.fecha_informes||''
@@ -2259,6 +2397,9 @@ function verVenta(r) {
   // Ocultar botón guardar
   document.querySelector('#modal-ventas .btn-save').style.display = 'none'
   document.getElementById('modal-ventas').setAttribute('data-readonly', '1')
+  window._ventaEnVista = r
+  document.getElementById('btn-reportar-venta').style.display = 'inline-flex'
+  actualizarAgendarBtn()
 }
 
 // ── VER ALQUILER (solo lectura, para usuarios) ────────────────────
@@ -2327,7 +2468,11 @@ async function saveVenta() {
     venc_conf_dias:  parseInt(document.getElementById('v-venc-conf-dias').value)||null,
     venc_conf_tipo:  document.getElementById('v-venc-conf-tipo').value||'corridos',
     fecha_op:        document.getElementById('v-fecha-op').value||null,
-    lugar_firma:     document.getElementById('v-lugar-firma').value||null,
+    lugar_firma:     document.getElementById('v-lugar-firma').value.trim()||null,
+    hora_firma:      document.getElementById('v-hora-firma').value||null,
+    lugar_firma_place_id: document.getElementById('v-lugar-firma').dataset.placeId||null,
+    lugar_firma_lat:      parseFloat(document.getElementById('v-lugar-firma').dataset.lat)||null,
+    lugar_firma_lng:      parseFloat(document.getElementById('v-lugar-firma').dataset.lng)||null,
     boleto_escritura:document.getElementById('v-boleto').value||null,
     informes:        document.getElementById('v-informes').value||null,
     fecha_informes:  document.getElementById('v-fecha-informes').value||null,
@@ -2335,8 +2480,18 @@ async function saveVenta() {
     notas:           document.getElementById('v-notas').value||null,
   }
   const id = document.getElementById('v-id').value
+  // Lugar de firma: si se escribió uno nuevo, tiene que salir de las sugerencias de Google
+  if (row.lugar_firma && !row.lugar_firma_place_id && row.lugar_firma !== (window._lugarFirmaOriginal || '')) {
+    toast('Elegí el lugar de firma de la lista de sugerencias para confirmar que la dirección existe', true)
+    document.getElementById('v-lugar-firma').focus()
+    return
+  }
+  // Verificación de duplicados (reservas activas y operaciones cerradas)
+  if (!(await confirmarSinDuplicados(inmueble, id))) return
   // Capturar valores anteriores para el diff
   const anterior = id ? (ventasData || []).find(r => String(r.id) === String(id)) : null
+  // Si cambió la dirección, se borran las coordenadas para que el pin del mapa se recalcule
+  if (anterior && (anterior.inmueble || '') !== inmueble) { row.lat = null; row.lng = null }
   const { error } = id
     ? await sb.from('ventas').update(row).eq('id', id)
     : await sb.from('ventas').insert(row)
@@ -2353,7 +2508,9 @@ async function saveVenta() {
       fecha_reserva: 'F. reserva', monto_reserva: 'Monto reserva',
       fecha_refuerzo: 'F. refuerzo', monto_refuerzo: 'Monto refuerzo',
       fecha_conformidad: 'F. conformidad', venc_conf_dias: 'Venc. días',
-      fecha_op: 'F. escritura', lugar_firma: 'Lugar firma',
+      fecha_op: 'F. escritura', lugar_firma: 'Lugar firma', hora_firma: 'Hora firma',
+      lugar_firma_place_id: 'Lugar firma (verificado)', lugar_firma_lat: 'Lugar firma lat', lugar_firma_lng: 'Lugar firma lng',
+      lat: 'Latitud mapa', lng: 'Longitud mapa',
       boleto_escritura: 'Boleto/escritura', informes: 'Informes',
       fecha_informes: 'F. informes', liquidacion: 'Liquidación', notas: 'Notas',
     }
@@ -2984,8 +3141,10 @@ async function loadTop3() {
     })
   })
 
+  // Solo asesores activos: quien fue dado de baja no aparece y libera el lugar
+  const activosSet = new Set(asesoresList.filter(a => a.activo !== false).map(a => a.nombre))
   const ranked = Object.entries(stats)
-    .filter(([, s]) => s.com > 0)
+    .filter(([nombre, s]) => s.com > 0 && activosSet.has(nombre))
     .sort((a, b) => b[1].com - a[1].com)
     .slice(0, 3)
 
@@ -5713,19 +5872,19 @@ function renderZpZona(sufijo, datos) {
     return null
   }
 
+  let _mapaRenderSeq = 0
   async function renderMapaPins() {
+    if (!mapaInstance || !window.google || !google.maps) return
+    // Cada render invalida al anterior: evita pins duplicados si se redibuja mientras geocodifica
+    const seq = ++_mapaRenderSeq
     // Limpiar markers e infowindows anteriores
     mapaMarkers.forEach(m => m.setMap(null))
     mapaMarkers = []
     mapaInfoWindows.forEach(iw => iw.close())
     mapaInfoWindows = []
 
-    if (!window.ventasData || window.ventasData.length === 0) {
-      const { data } = await sb.from('ventas').select('*')
-      window.ventasData = data || []
-    }
-
-    const realizadas = (window.ventasData || []).filter(r => r.estado === 'Realizada' && r.inmueble)
+    // Misma fuente que la tabla: datos actualizados y filtrados por permisos del usuario
+    const realizadas = (ventasData || []).filter(r => r.estado === 'Realizada' && r.inmueble)
     document.getElementById('mapa-count').textContent = realizadas.length + ' propiedad' + (realizadas.length !== 1 ? 'es' : '')
 
     const bounds = new google.maps.LatLngBounds()
@@ -5736,6 +5895,7 @@ function renderZpZona(sufijo, datos) {
 
       if (!lat || !lng) {
         const coords = await geocodeAddress(r.inmueble)
+        if (seq !== _mapaRenderSeq) return
         if (!coords) continue
         lat = coords.lat; lng = coords.lng
         sb.from('ventas').update({ lat, lng }).eq('id', r.id).then(() => {})
@@ -5761,6 +5921,7 @@ function renderZpZona(sufijo, datos) {
         strokeWeight: 3
       }
 
+      if (seq !== _mapaRenderSeq) return
       const marker = new google.maps.Marker({
         position: { lat, lng },
         map: mapaInstance,
@@ -5930,7 +6091,7 @@ function renderZpZona(sufijo, datos) {
       const { error } = await sb.from('ventas').update({ lat, lng }).eq('id', id)
       if (error) { alert('Error al guardar la ubicación.'); return }
       registrarLog('corregir_pin_mapa', 'ventas', id, { lat, lng, metodo: 'clic_mapa' })
-      const rec = (window.ventasData || []).find(r => r.id === id)
+      const rec = (ventasData || []).find(r => String(r.id) === String(id))
       if (rec) { rec.lat = lat; rec.lng = lng }
       renderMapaPins()
     })
@@ -5975,7 +6136,7 @@ function renderZpZona(sufijo, datos) {
       alert('Error al guardar. Intentá de nuevo.'); return
     }
     registrarLog('corregir_direccion_mapa', 'ventas', id, { direccion: label, lat: coords.lat, lng: coords.lng })
-    const rec = (window.ventasData || []).find(r => r.id === id)
+    const rec = (ventasData || []).find(r => String(r.id) === String(id))
     if (rec) { rec.lat = coords.lat; rec.lng = coords.lng; rec.inmueble = label }
     mapaInfoWindows.forEach(iw => iw.close())
     renderMapaPins()
@@ -5983,8 +6144,8 @@ function renderZpZona(sufijo, datos) {
 
   // Pre-geocodifica todas las realizadas sin coords en background
   async function preGeocodeVentas() {
-    if (!window.ventasData) return
-    const pendientes = window.ventasData.filter(r => r.estado === 'Realizada' && r.inmueble && (!r.lat || !r.lng))
+    if (!ventasData || !ventasData.length) return
+    const pendientes = ventasData.filter(r => r.estado === 'Realizada' && r.inmueble && (!r.lat || !r.lng))
     for (const r of pendientes) {
       const coords = await geocodeAddress(r.inmueble)
       if (!coords) continue
@@ -5993,6 +6154,447 @@ function renderZpZona(sufijo, datos) {
     }
   }
   </script>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// OPERACIONES: duplicados, lugar/horario de firma, agenda, reportes, cuenta
+// ════════════════════════════════════════════════════════════════════
+
+function raEsc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))
+}
+
+// ── DUPLICADOS ─────────────────────────────────────────────────────
+// Normaliza una dirección para comparar: sin acentos, mayúsculas, signos ni palabras de unidad
+function normDireccion(s) {
+  let d = String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  d = d.replace(/\bavenida\b|\bavda\b|\bav\b\.?/g, 'av')
+  d = d.replace(/[°º"'.,;:#()\/\\-]/g, ' ')
+  d = d.replace(/(\d+)\s*(er|ro|do|to|vo|no|mo)\b/g, '$1')
+  d = d.replace(/\b(piso|depto|dpto|dto|departamento|unidad|uf|caba|capital federal|argentina|buenos aires)\b/g, ' ')
+  return d.replace(/\s+/g, ' ').trim()
+}
+
+// Clave del edificio: calle + altura (sin piso/depto)
+function claveEdificio(s) {
+  const base = normDireccion(typeof limpiarDireccion === 'function' ? limpiarDireccion(s) : s)
+  const m = base.match(/^(.*?\b\d{1,5})\b/)
+  return m ? m[1].trim() : base
+}
+
+// Devuelve { exactas: [...], edificio: [...] } entre reservas activas y operaciones cerradas
+function buscarDuplicados(inmueble, idActual, lista) {
+  const full = normDireccion(inmueble)
+  const edif = claveEdificio(inmueble)
+  const res = { exactas: [], edificio: [] }
+  if (!full || full.length < 4) return res
+  ;(lista || []).forEach(r => {
+    if (!r.inmueble || (idActual && String(r.id) === String(idActual))) return
+    if (r.estado !== 'En curso' && r.estado !== 'Realizada') return
+    if (normDireccion(r.inmueble) === full) res.exactas.push(r)
+    else if (edif && claveEdificio(r.inmueble) === edif) res.edificio.push(r)
+  })
+  return res
+}
+
+function _descOp(r) {
+  const tipo = r.estado === 'En curso' ? 'Reserva activa' : 'Operación cerrada'
+  const fecha = r.estado === 'En curso' ? (r.fecha_reserva ? ' desde ' + formatDate(r.fecha_reserva) : '') : (r.fecha_op ? ' el ' + formatDate(r.fecha_op) : '')
+  return `<strong>${raEsc(r.inmueble)}</strong> · ${tipo}${fecha}${r.broker ? ' · ' + raEsc(r.broker) : ''}`
+}
+
+function ocultarAvisoDuplicados() {
+  const el = document.getElementById('v-dup-aviso')
+  if (el) { el.style.display = 'none'; el.innerHTML = '' }
+}
+
+let _dupTimer = null
+function programarChequeoDuplicados() {
+  clearTimeout(_dupTimer)
+  _dupTimer = setTimeout(() => {
+    const inm = document.getElementById('v-inmueble').value.trim()
+    const id  = document.getElementById('v-id').value
+    renderAvisoDuplicados(buscarDuplicados(inm, id, ventasData))
+  }, 400)
+}
+
+function renderAvisoDuplicados(d) {
+  const el = document.getElementById('v-dup-aviso')
+  if (!el) return
+  const activas  = d.exactas.filter(r => r.estado === 'En curso')
+  const cerradas = d.exactas.filter(r => r.estado === 'Realizada')
+  if (!d.exactas.length && !d.edificio.length) { ocultarAvisoDuplicados(); return }
+  let html = ''
+  if (activas.length) {
+    el.style.background = '#FEF2F2'; el.style.border = '1px solid #FECACA'; el.style.color = '#991B1B'
+    html += `<div style="font-weight:700;margin-bottom:3px">Este inmueble ya tiene una reserva activa</div>` + activas.map(_descOp).join('<br>')
+  } else if (cerradas.length) {
+    el.style.background = '#FFFBEB'; el.style.border = '1px solid #FDE68A'; el.style.color = '#92400E'
+    html += `<div style="font-weight:700;margin-bottom:3px">Ya existe una operación cerrada con esta dirección</div>` + cerradas.map(_descOp).join('<br>')
+  } else {
+    el.style.background = '#F9FAFB'; el.style.border = '1px solid #E5E7EB'; el.style.color = '#4B5563'
+  }
+  if (d.edificio.length) {
+    html += `${html ? '<div style="margin-top:6px">' : '<div>'}<span style="font-weight:600">Otras unidades en el mismo edificio:</span><br>` + d.edificio.slice(0, 5).map(_descOp).join('<br>') + '</div>'
+  }
+  el.innerHTML = html
+  el.style.display = 'block'
+}
+
+// Chequeo final al guardar, con datos frescos de la base
+async function confirmarSinDuplicados(inmueble, idActual) {
+  let lista = ventasData
+  try {
+    const { data, error } = await sb.from('ventas').select('id, inmueble, estado, broker, fecha_reserva, fecha_op').in('estado', ['En curso', 'Realizada'])
+    if (!error && data) lista = data
+  } catch (e) {}
+  const d = buscarDuplicados(inmueble, idActual, lista)
+  renderAvisoDuplicados(d)
+  const activas  = d.exactas.filter(r => r.estado === 'En curso')
+  const cerradas = d.exactas.filter(r => r.estado === 'Realizada')
+  const txt = r => '• ' + r.inmueble + (r.broker ? ' (' + r.broker + ')' : '')
+  if (activas.length) {
+    return confirm('ATENCIÓN: este inmueble ya tiene una reserva activa cargada:\n\n' + activas.map(txt).join('\n') +
+      '\n\nGuardar igual puede generar una operación duplicada. ¿Querés guardarla de todos modos?')
+  }
+  if (cerradas.length) {
+    return confirm('Ya existe una operación cerrada con esta misma dirección:\n\n' + cerradas.map(txt).join('\n') +
+      '\n\nSi es una nueva operación sobre el mismo inmueble, podés continuar. ¿Guardar?')
+  }
+  return true
+}
+
+// Auditoría de duplicados existentes (admin)
+function openDuplicados() {
+  const ops = (ventasData || []).filter(r => r.inmueble && (r.estado === 'En curso' || r.estado === 'Realizada'))
+  const grupos = {}
+  ops.forEach(r => { const k = normDireccion(r.inmueble); (grupos[k] = grupos[k] || []).push(r) })
+  const dups = Object.values(grupos).filter(g => g.length > 1)
+    .sort((a, b) => (b.some(r => r.estado === 'En curso') - a.some(r => r.estado === 'En curso')) || b.length - a.length)
+  const el = document.getElementById('duplicados-list')
+  if (!dups.length) {
+    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#16A34A;font-weight:600">No se encontraron operaciones duplicadas entre reservas activas y operaciones cerradas.</div>'
+  } else {
+    window._dupsRender = dups
+    el.innerHTML = `<div style="font-size:12.5px;color:#6B7280;margin-bottom:10px">${dups.length} dirección${dups.length !== 1 ? 'es' : ''} con más de una operación. Revisá cada grupo y eliminá o corregí la que no corresponda.</div>` +
+      dups.map((g, gi) => {
+        const dosActivas = g.filter(r => r.estado === 'En curso').length > 1
+        const dosCerradas = g.filter(r => r.estado === 'Realizada').length > 1
+        const tag = dosActivas ? '<span style="background:#FEE2E2;color:#B91C1C;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">2+ reservas activas</span>'
+          : dosCerradas ? '<span style="background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">2+ cerradas</span>'
+          : '<span style="background:#E0E7FF;color:#3730A3;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px">Activa + cerrada</span>'
+        return `<div style="border:1px solid #E5E7EB;border-radius:10px;margin-bottom:10px;overflow:hidden">
+          <div style="background:#F9FAFB;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <strong style="font-size:13px;color:#0F1F3D">${raEsc(g[0].inmueble)}</strong>${tag}
+          </div>
+          ${g.map((r, ri) => `<div style="padding:8px 12px;border-top:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;font-size:12.5px">
+            <div><span class="badge ${estadoClass(r.estado)}"><span class="badge-dot"></span>${raEsc(r.estado)}</span>
+              <span style="margin-left:8px;color:#374151">${raEsc(r.broker || '—')}</span>
+              <span style="margin-left:8px;color:#9CA3AF">Reserva: ${formatDate(r.fecha_reserva)} · Escritura: ${formatDate(r.fecha_op)}</span></div>
+            <button class="action-btn" onclick="closeModal('duplicados');editVenta(window._dupsRender[${gi}][${ri}])">Abrir</button>
+          </div>`).join('')}
+        </div>`
+      }).join('')
+  }
+  document.getElementById('modal-duplicados').classList.add('open')
+}
+
+// ── LUGAR DE FIRMA CON SUGERENCIAS DE GOOGLE ───────────────────────
+function setLugarFirmaVerificado(info, legado) {
+  const input = document.getElementById('v-lugar-firma')
+  const est   = document.getElementById('v-lugar-firma-estado')
+  if (!input) return
+  if (info && info.placeId) {
+    input.dataset.placeId = info.placeId
+    input.dataset.lat = info.lat ?? ''
+    input.dataset.lng = info.lng ?? ''
+    est.innerHTML = '<span style="color:#16A34A">✓ Dirección verificada</span>'
+  } else {
+    delete input.dataset.placeId; delete input.dataset.lat; delete input.dataset.lng
+    est.innerHTML = legado ? '<span style="color:#9CA3AF">Cargado sin verificar. Elegí una sugerencia para confirmarlo.</span>' : ''
+  }
+}
+
+function initLugarFirmaAutocomplete() {
+  const input = document.getElementById('v-lugar-firma')
+  const box   = document.getElementById('v-lugar-firma-sug')
+  if (!input || input._acInit) return
+  input._acInit = true
+  let timer = null, token = null
+
+  input.addEventListener('input', () => {
+    setLugarFirmaVerificado(null)
+    actualizarAgendarBtn()
+    clearTimeout(timer)
+    const q = input.value.trim()
+    if (q.length < 3) { box.style.display = 'none'; box.innerHTML = ''; return }
+    timer = setTimeout(async () => {
+      try {
+        await loadGoogleMapsSDK()
+        if (!token) token = new google.maps.places.AutocompleteSessionToken()
+        new google.maps.places.AutocompleteService().getPlacePredictions(
+          { input: q, componentRestrictions: { country: 'ar' }, language: 'es', sessionToken: token },
+          (preds, status) => {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !preds || !preds.length) {
+              box.innerHTML = '<div style="padding:9px 12px;font-size:12px;color:#9CA3AF">Sin sugerencias. Revisá cómo está escrita la dirección.</div>'
+              box.style.display = 'block'
+              return
+            }
+            box.innerHTML = preds.slice(0, 6).map(p => `
+              <div data-pid="${raEsc(p.place_id)}" data-label="${raEsc(p.description)}" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #F3F4F6">
+                <div style="font-size:12.5px;font-weight:600;color:#111827">${raEsc(p.structured_formatting?.main_text || p.description)}</div>
+                <div style="font-size:11px;color:#6B7280">${raEsc(p.structured_formatting?.secondary_text || '')}</div>
+              </div>`).join('')
+            box.style.display = 'block'
+            box.querySelectorAll('div[data-pid]').forEach(div => {
+              div.addEventListener('mouseover', () => div.style.background = '#F9FAFB')
+              div.addEventListener('mouseout',  () => div.style.background = '')
+              div.addEventListener('mousedown', e => {
+                e.preventDefault()
+                box.style.display = 'none'
+                const pid = div.dataset.pid
+                new google.maps.Geocoder().geocode({ placeId: pid }, (results, st) => {
+                  const g = (st === 'OK' && results && results[0]) ? results[0] : null
+                  // Si es un comercio (ej. escribanía) se conserva el nombre y se suma la dirección
+                  const main = div.querySelector('div').textContent.trim()
+                  const dir  = g ? g.formatted_address.replace(/, Argentina$/, '') : div.dataset.label
+                  input.value = (g && !dir.toLowerCase().startsWith(main.toLowerCase())) ? `${main} · ${dir}` : dir
+                  setLugarFirmaVerificado({ placeId: pid, lat: g ? g.geometry.location.lat() : null, lng: g ? g.geometry.location.lng() : null })
+                  token = null
+                  actualizarAgendarBtn()
+                })
+              })
+            })
+          })
+      } catch (e) { box.style.display = 'none' }
+    }, 300)
+  })
+  input.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none' }, 200))
+}
+
+// ── AGENDAR FIRMA EN GOOGLE CALENDAR ───────────────────────────────
+const DURACION_FIRMA_MIN = 60
+
+function _finFirma(hora) {
+  const [h, m] = hora.split(':').map(Number)
+  const t = h * 60 + m + DURACION_FIRMA_MIN
+  return String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0')
+}
+
+function actualizarAgendarBtn() {
+  const fecha = document.getElementById('v-fecha-op').value
+  const hora  = document.getElementById('v-hora-firma').value
+  const fin   = document.getElementById('v-hora-firma-fin')
+  if (fin) fin.textContent = hora ? `Estimado hasta las ${_finFirma(hora)} (1 hora)` : ''
+  const btn = document.getElementById('btn-agendar-firma')
+  if (btn) btn.style.display = (fecha && hora) ? 'inline-flex' : 'none'
+}
+
+function agendarFirma() {
+  const fecha = document.getElementById('v-fecha-op').value
+  const hora  = document.getElementById('v-hora-firma').value
+  if (!fecha || !hora) { toast('Completá la fecha de operación y el horario de firma', true); return }
+  const inm    = document.getElementById('v-inmueble').value.trim()
+  const lugar  = document.getElementById('v-lugar-firma').value.trim()
+  const tipo   = document.getElementById('v-boleto').value || 'Firma'
+  const broker = document.getElementById('v-broker').value
+  const cob    = document.getElementById('v-cobroker')
+  const cobTxt = cob.value === '__externa__' ? document.getElementById('v-inm-externa').value : cob.value
+  const fin    = _finFirma(hora)
+  const stamp  = (f, h) => f.replace(/-/g, '') + 'T' + h.replace(':', '') + '00'
+  // Si la firma termina después de medianoche se pasa al día siguiente
+  let fechaFin = fecha
+  if (fin < hora) { const d = parseLocalDate(fecha); d.setDate(d.getDate() + 1); fechaFin = dateKey(d) }
+  const detalles = [
+    `Operación: ${inm}`,
+    broker ? `Broker: ${broker}` : '',
+    cobTxt ? `Compartida con: ${cobTxt}` : '',
+    'Cargado desde el Panel Real Aires'
+  ].filter(Boolean).join('\n')
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `${tipo === 'Escritura' ? 'Escritura' : tipo === 'Boleto' ? 'Firma de boleto' : 'Firma'} · ${inm}`,
+    dates: `${stamp(fecha, hora)}/${stamp(fechaFin, fin)}`,
+    ctz: 'America/Argentina/Buenos_Aires',
+    details: detalles,
+    location: lugar
+  })
+  window.open('https://calendar.google.com/calendar/render?' + params.toString(), '_blank', 'noopener')
+}
+
+// ── REPORTES DE ASESORES ───────────────────────────────────────────
+let _reporteVenta = null
+
+function openReporte(r) {
+  _reporteVenta = r
+  document.getElementById('rep-inmueble').textContent = r.inmueble || 'Operación'
+  document.getElementById('rep-categoria').selectedIndex = 0
+  document.getElementById('rep-detalle').value = ''
+  const btn = document.getElementById('rep-enviar')
+  btn.disabled = false; btn.textContent = 'Enviar reporte'
+  document.getElementById('modal-reporte').classList.add('open')
+  setTimeout(() => document.getElementById('rep-detalle').focus(), 50)
+}
+
+function openReporteDesdeModal() {
+  if (window._ventaEnVista) openReporte(window._ventaEnVista)
+}
+
+async function enviarReporte() {
+  const r = _reporteVenta
+  const detalle = document.getElementById('rep-detalle').value.trim()
+  if (!r) return
+  if (detalle.length < 5) { toast('Contá qué hay que corregir', true); return }
+  const btn = document.getElementById('rep-enviar')
+  btn.disabled = true; btn.textContent = 'Enviando...'
+
+  const fila = {
+    venta_id: String(r.id),
+    inmueble: r.inmueble || null,
+    asesor_nombre: window.currentUserNombre || currentUser?.email || null,
+    asesor_email: currentUser?.email,
+    categoria: document.getElementById('rep-categoria').value,
+    detalle
+  }
+  const { data, error } = await sb.from('reportes_operacion').insert(fila).select('id').single()
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Enviar reporte'
+    toast('No se pudo enviar el reporte: ' + error.message, true)
+    return
+  }
+  registrarLog('reportar_venta', 'ventas', r.id, { inmueble: r.inmueble, categoria: fila.categoria })
+
+  let mailOk = false
+  try {
+    const res = await _callEdgeFn('notificar-reporte', { reporte_id: data.id })
+    mailOk = res.ok
+  } catch (e) {}
+
+  closeModal('reporte')
+  toast(mailOk ? 'Reporte enviado. Te avisaremos cuando esté corregido.' : 'Reporte registrado. El aviso por correo no salió, pero quedó cargado en el panel.', !mailOk)
+}
+
+let _reportesCache = []
+
+async function loadReportesCount() {
+  const badge = document.getElementById('reportes-badge')
+  if (!badge) return
+  const { count, error } = await sb.from('reportes_operacion').select('id', { count: 'exact', head: true }).eq('estado', 'Pendiente')
+  if (error || !count) { badge.style.display = 'none'; return }
+  badge.textContent = count
+  badge.style.display = 'inline-block'
+}
+
+async function openReportesAdmin() {
+  document.getElementById('reportes-admin-list').innerHTML = '<div class="loading"><div class="spinner"></div></div>'
+  document.getElementById('modal-reportes-admin').classList.add('open')
+  const { data, error } = await sb.from('reportes_operacion').select('*').order('created_at', { ascending: false }).limit(200)
+  if (error) {
+    document.getElementById('reportes-admin-list').innerHTML = `<div style="padding:1rem;color:#DC2626;font-size:13px">No se pudieron cargar los reportes (${raEsc(error.message)}). Verificá que se haya ejecutado sql/operaciones_mejoras.sql en Supabase.</div>`
+    return
+  }
+  _reportesCache = data || []
+  renderReportesAdmin()
+}
+
+function renderReportesAdmin() {
+  const verRes = document.getElementById('rep-ver-resueltos').checked
+  const lista = _reportesCache.filter(r => verRes || r.estado !== 'Resuelto')
+  const el = document.getElementById('reportes-admin-list')
+  if (!lista.length) { el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:#9CA3AF;font-size:13px">No hay reportes pendientes.</div>'; return }
+  el.innerHTML = lista.map(r => {
+    const pend = r.estado !== 'Resuelto'
+    const fecha = new Date(r.created_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return `<div style="border:1px solid ${pend ? '#FDE68A' : '#E5E7EB'};background:${pend ? '#FFFBEB' : '#fff'};border-radius:10px;padding:12px 14px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div>
+          <div style="font-weight:700;color:#0F1F3D;font-size:13.5px">${raEsc(r.inmueble || 'Operación')}</div>
+          <div style="font-size:11.5px;color:#6B7280;margin-top:2px">${raEsc(r.asesor_nombre || r.asesor_email)} · ${fecha} · ${raEsc(r.categoria)}</div>
+        </div>
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;${pend ? 'background:#FEF3C7;color:#92400E' : 'background:#DCFCE7;color:#15803D'}">${pend ? 'Pendiente' : 'Resuelto'}</span>
+      </div>
+      <div style="font-size:13px;color:#111827;margin-top:8px;white-space:pre-wrap;line-height:1.45">${raEsc(r.detalle)}</div>
+      ${!pend && r.resuelto_por ? `<div style="font-size:11px;color:#9CA3AF;margin-top:6px">Resuelto por ${raEsc(r.resuelto_por)}</div>` : ''}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        ${r.venta_id ? `<button class="action-btn" onclick="abrirOpDesdeReporte('${raEsc(r.venta_id)}')">Abrir operación</button>` : ''}
+        ${pend ? `<button class="action-btn" style="border-color:#86EFAC;color:#15803D" onclick="resolverReporte('${raEsc(r.id)}')">Marcar resuelto</button>` : ''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+async function resolverReporte(id) {
+  const { error } = await sb.from('reportes_operacion')
+    .update({ estado: 'Resuelto', resuelto_at: new Date().toISOString(), resuelto_por: currentUser?.email || null })
+    .eq('id', id)
+  if (error) { toast('No se pudo actualizar: ' + error.message, true); return }
+  const rep = _reportesCache.find(r => r.id === id)
+  if (rep) { rep.estado = 'Resuelto'; rep.resuelto_por = currentUser?.email }
+  registrarLog('resolver_reporte', 'reportes_operacion', id, { inmueble: rep?.inmueble })
+  renderReportesAdmin()
+  loadReportesCount()
+}
+
+function abrirOpDesdeReporte(ventaId) {
+  const op = (ventasData || []).find(r => String(r.id) === String(ventaId))
+  if (!op) { toast('La operación ya no existe (pudo haber sido eliminada)', true); return }
+  closeModal('reportes-admin')
+  editVenta(op)
+}
+
+// ── MI CUENTA: CAMBIO Y RESTABLECIMIENTO DE CONTRASEÑA ─────────────
+let _modoRecuperacion = false
+
+function openMiCuenta(recuperacion) {
+  _modoRecuperacion = !!recuperacion
+  document.getElementById('mc-email').textContent = currentUser?.email || ''
+  document.getElementById('mc-pass1').value = ''
+  document.getElementById('mc-pass2').value = ''
+  document.getElementById('mc-msg').style.display = 'none'
+  document.getElementById('mc-recovery-msg').style.display = _modoRecuperacion ? 'block' : 'none'
+  document.getElementById('mc-reset-block').style.display = _modoRecuperacion ? 'none' : 'block'
+  document.getElementById('mc-close').style.display  = _modoRecuperacion ? 'none' : ''
+  document.getElementById('mc-cancel').style.display = _modoRecuperacion ? 'none' : ''
+  document.getElementById('mc-title').textContent = _modoRecuperacion ? 'Nueva contraseña' : 'Mi cuenta'
+  document.getElementById('modal-mi-cuenta').classList.add('open')
+  setTimeout(() => document.getElementById('mc-pass1').focus(), 50)
+}
+
+function _mcMsg(txt, ok) {
+  const el = document.getElementById('mc-msg')
+  el.style.color = ok ? '#16A34A' : '#DC2626'
+  el.textContent = txt
+  el.style.display = 'block'
+}
+
+async function guardarNuevaPassword() {
+  const p1 = document.getElementById('mc-pass1').value
+  const p2 = document.getElementById('mc-pass2').value
+  if (p1.length < 8) { _mcMsg('La contraseña debe tener al menos 8 caracteres.'); return }
+  if (p1 !== p2)     { _mcMsg('Las contraseñas no coinciden.'); return }
+  const btn = document.getElementById('mc-guardar')
+  btn.disabled = true
+  const { error } = await sb.auth.updateUser({ password: p1 })
+  btn.disabled = false
+  if (error) {
+    _mcMsg(/different from the old/i.test(error.message) ? 'La nueva contraseña tiene que ser distinta de la actual.' : 'No se pudo cambiar la contraseña: ' + error.message)
+    return
+  }
+  registrarLog('cambiar_password', 'usuarios', currentUser?.email, null)
+  _modoRecuperacion = false
+  closeModal('mi-cuenta')
+  // Limpiar el token del enlace de recuperación de la barra de direcciones
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search)
+  toast('Contraseña actualizada')
+}
+
+async function enviarResetMiCuenta() {
+  const email = currentUser?.email
+  if (!email) return
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname })
+  _mcMsg(error ? 'No se pudo enviar el correo: ' + error.message : `Te enviamos un enlace a ${email} para restablecer la contraseña.`, !error)
+}
+</script>
 
 <!-- MODAL SELECTOR DE TIPO DE FICHA -->
 <div class="modal-overlay" id="modal-selector-ficha">
