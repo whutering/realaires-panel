@@ -352,6 +352,15 @@ tr:hover td { background: #FAFBFC; }
 .pac-item-query { font-size: 12px; color: #111; }
 
 /* ═══════ BÚSQUEDAS ═══════ */
+.bqz-box { display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:6px 8px; border:1.5px solid var(--border); border-radius:8px; min-height:40px; cursor:text; background:#fff }
+.bqz-box input { border:none !important; outline:none; flex:1; min-width:180px; padding:4px !important; font-size:13px }
+.bqz-chip { display:inline-flex; align-items:center; gap:5px; background:#0A0A0A; color:#fff; border-radius:14px; padding:3px 6px 3px 10px; font-size:12px; font-weight:600 }
+.bqz-chip small { color:#C9A24E; font-weight:600; font-size:10px }
+.bqz-chip button { background:none; border:none; color:#fff; cursor:pointer; font-size:14px; line-height:1; padding:0 2px }
+.bqz-sug { position:relative; z-index:60; margin-top:2px; background:#fff; border:1px solid #D1D5DB; border-radius:8px; box-shadow:0 6px 16px rgba(0,0,0,.12); max-height:240px; overflow-y:auto }
+.bqz-sug div { padding:7px 12px; font-size:12.5px; cursor:pointer; display:flex; justify-content:space-between; gap:10px }
+.bqz-sug div.act, .bqz-sug div:hover { background:#F3F4F6 }
+.bqz-sug span { color:#9CA3AF; font-size:11px }
 .bq-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; background:#F3F4F6; color:#374151; margin:2px 4px 2px 0; white-space:nowrap }
 .bq-chip.dark { background:#0A0A0A; color:#fff }
 .bq-chip.gold { background:#FEF3C7; color:#92400E }
@@ -8472,7 +8481,15 @@ async function _renderInformesCom() {
           <select id="bqf-pago"><option value="">Sin definir</option><option>Contado</option><option>Crédito hipotecario</option><option>Con venta de propiedad</option></select>
         </div>
         <div class="form-group full"><label>Tipo de inmueble</label><div class="bq-checks" id="bqf-tipos"></div></div>
-        <div class="form-group full"><label>Barrios (separados por coma)</label><input id="bqf-barrios" list="bq-barrios-list" placeholder="Belgrano, Núñez, Colegiales"></div>
+        <div class="form-group full"><label>Barrios, localidades o partidos</label>
+          <input type="hidden" id="bqf-barrios">
+          <div class="bqz-box" onclick="document.getElementById('bqz-input').focus()">
+            <span id="bqz-chips"></span>
+            <input id="bqz-input" autocomplete="off" placeholder="Escribí un barrio de CABA, una localidad o un partido de provincia..." oninput="bqzSugerir()" onkeydown="bqzTecla(event)" onblur="setTimeout(()=>bqzOcultar(),180)">
+          </div>
+          <div id="bqz-sug" class="bqz-sug" style="display:none"></div>
+          <div style="font-size:11px;color:#9CA3AF;margin-top:3px">Elegí un partido (por ejemplo Vicente López) para incluir todas sus localidades.</div>
+        </div>
         <div class="form-group"><label>Ambientes (mín. / máx.)</label><div class="bq-inline2"><input id="bqf-amb-min" type="number" min="1" placeholder="Mín."><input id="bqf-amb-max" type="number" min="1" placeholder="Máx."></div></div>
         <div class="form-group"><label>Dormitorios mín. / Sup. mín. m²</label><div class="bq-inline2"><input id="bqf-dorm-min" type="number" min="0" placeholder="Dorm."><input id="bqf-sup-min" type="number" min="0" placeholder="m²"></div></div>
         <div class="form-group full"><label>Presupuesto (mín. / máx. / moneda)</label><div class="bq-inline3"><input id="bqf-precio-min" type="number" placeholder="Mínimo"><input id="bqf-precio-max" type="number" placeholder="Máximo"><select id="bqf-moneda"><option value="USD">USD</option><option value="ARS">$</option></select></div></div>
@@ -8617,7 +8634,9 @@ function bqEncaja(b, p) {
   if ((b.tipos || []).length && p.tipo && !b.tipos.includes(p.tipo)) return false
   if ((b.barrios || []).length && p.barrio) {
     const pb = bqNorm(p.barrio)
-    if (!b.barrios.some(z => { const n = bqNorm(z); return pb.includes(n) || n.includes(pb) })) return false
+    // También compara contra la ubicación completa (partido, zona) que trae Tokko
+    const zonas = String(p.zona || '').split('|').map(bqNorm).filter(Boolean)
+    if (!b.barrios.some(z => { const n = bqNorm(z); return pb.includes(n) || n.includes(pb) || zonas.includes(n) })) return false
   }
   if (p.amb != null && b.amb_min != null && p.amb < b.amb_min) return false
   if (p.amb != null && b.amb_max != null && p.amb > b.amb_max) return false
@@ -8961,10 +8980,75 @@ async function bqCargarSugeridas() {
     </div>`).join('')
 }
 
+// ── Selector de barrios / localidades / partidos ──────────────────
+const BQ_PARTIDOS_GBA = ['Almirante Brown','Avellaneda','Berazategui','Escobar','Esteban Echeverría','Ezeiza','Florencio Varela','General Rodríguez','General San Martín','Hurlingham','Ituzaingó','José C. Paz','La Matanza','La Plata','Lanús','Lomas de Zamora','Malvinas Argentinas','Marcos Paz','Merlo','Moreno','Morón','Pilar','Quilmes','San Fernando','San Isidro','San Miguel','Tigre','Tres de Febrero','Vicente López']
+let _bqzSel = [], _bqzOpc = [], _bqzIdx = -1
+
+// Opciones: barrios de CABA, partidos del GBA y localidades reales del inventario (con su partido)
+function _bqzOpciones() {
+  const m = new Map()
+  BQ_BARRIOS.forEach(n => m.set(bqNorm(n), { n, tipo: 'CABA' }))
+  BQ_PARTIDOS_GBA.forEach(n => m.set(bqNorm(n), { n, tipo: 'Partido · todas sus localidades' }))
+  ;(typeof comData !== 'undefined' ? comData : []).forEach(c => {
+    const seg = String(c.datos_tokko?.ubicacion || '').split('|').map(x => x.trim()).filter(Boolean)
+    const esCaba = seg.some(x => /capital federal|caba/i.test(x))
+    if (c.barrio && !m.has(bqNorm(c.barrio))) m.set(bqNorm(c.barrio), { n: c.barrio, tipo: esCaba ? 'CABA' : (seg.length >= 2 ? 'Localidad · ' + seg[seg.length - 2] : 'Localidad') })
+    if (!esCaba && seg.length >= 3) { const part = seg[seg.length - 2]; if (!m.has(bqNorm(part))) m.set(bqNorm(part), { n: part, tipo: 'Partido · todas sus localidades' }) }
+  })
+  return [...m.values()]
+}
+
+function bqzCargar(lista) { _bqzSel = [...lista]; _bqzPintar(); const i = document.getElementById('bqz-input'); if (i) i.value = '' }
+function _bqzPintar() {
+  document.getElementById('bqf-barrios').value = _bqzSel.join(', ')
+  document.getElementById('bqz-chips').innerHTML = _bqzSel.map((n, i) => {
+    const o = _bqzOpciones().find(x => bqNorm(x.n) === bqNorm(n))
+    return `<span class="bqz-chip">${bqEsc(n)}${o && o.tipo.startsWith('Partido') ? ' <small>partido</small>' : ''}<button type="button" onclick="event.stopPropagation();bqzQuitar(${i})">×</button></span>`
+  }).join('')
+}
+function bqzQuitar(i) { _bqzSel.splice(i, 1); _bqzPintar() }
+function bqzAgregar(n) {
+  n = String(n || '').trim()
+  if (n && !_bqzSel.some(x => bqNorm(x) === bqNorm(n))) _bqzSel.push(n)
+  _bqzPintar()
+  const i = document.getElementById('bqz-input'); i.value = ''; i.focus()
+  bqzOcultar()
+}
+function bqzOcultar() { const s = document.getElementById('bqz-sug'); if (s) s.style.display = 'none'; _bqzIdx = -1 }
+function bqzSugerir() {
+  const q = bqNorm(document.getElementById('bqz-input').value.replace(',', ''))
+  const box = document.getElementById('bqz-sug')
+  if (!q) { bqzOcultar(); return }
+  const ya = new Set(_bqzSel.map(bqNorm))
+  _bqzOpc = _bqzOpciones().filter(o => !ya.has(bqNorm(o.n)) && bqNorm(o.n).includes(q))
+    .sort((a, b) => bqNorm(a.n).indexOf(q) - bqNorm(b.n).indexOf(q) || a.n.localeCompare(b.n)).slice(0, 10)
+  _bqzIdx = _bqzOpc.length ? 0 : -1
+  box.innerHTML = _bqzOpc.length
+    ? _bqzOpc.map((o, i) => `<div class="${i === 0 ? 'act' : ''}" onmousedown="event.preventDefault();bqzAgregar(_bqzOpc[${i}].n)">${bqEsc(o.n)}<span>${bqEsc(o.tipo)}</span></div>`).join('')
+    : `<div onmousedown="event.preventDefault();bqzAgregar(document.getElementById('bqz-input').value)">Agregar "${bqEsc(document.getElementById('bqz-input').value)}"<span>sin sugerencias</span></div>`
+  box.style.display = 'block'
+}
+function bqzTecla(e) {
+  const box = document.getElementById('bqz-sug')
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!_bqzOpc.length) return
+    e.preventDefault()
+    _bqzIdx = (_bqzIdx + (e.key === 'ArrowDown' ? 1 : -1) + _bqzOpc.length) % _bqzOpc.length
+    box.querySelectorAll('div').forEach((d, i) => d.classList.toggle('act', i === _bqzIdx))
+  } else if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+    const val = e.target.value.trim()
+    if (!val && e.key !== ',') return
+    e.preventDefault()
+    bqzAgregar(_bqzIdx >= 0 && _bqzOpc[_bqzIdx] ? _bqzOpc[_bqzIdx].n : val)
+  } else if (e.key === 'Backspace' && !e.target.value && _bqzSel.length) {
+    _bqzSel.pop(); _bqzPintar()
+  }
+}
+
 // ── Propiedades propias (Comercialización) que encajan ─────────────
 function _comComoProp(c) {
   const d = c.datos_tokko || {}
-  return { operacion: c.operacion, tipo: d.tipo || null, barrio: c.barrio, amb: d.ambientes ?? null, dorm: d.dormitorios ?? null,
+  return { operacion: c.operacion, tipo: d.tipo || null, barrio: c.barrio, zona: d.ubicacion || null, amb: d.ambientes ?? null, dorm: d.dormitorios ?? null,
            sup_cub: d.sup_cubierta ?? null, sup_tot: d.sup_total ?? null, precio: c.precio, moneda: c.moneda }
 }
 let _bqInternas = []
@@ -9233,6 +9317,7 @@ function bqAbrirModalBusqueda(editar = false) {
   set('bqf-cliente', b?.cliente_nombre); set('bqf-tel', b?.cliente_tel); set('bqf-email', b?.cliente_email)
   set('bqf-operacion', b?.operacion || 'Venta'); set('bqf-pago', b?.forma_pago || '')
   set('bqf-barrios', (b?.barrios || []).join(', '))
+  bqzCargar(b?.barrios || [])
   set('bqf-amb-min', b?.amb_min); set('bqf-amb-max', b?.amb_max); set('bqf-dorm-min', b?.dorm_min); set('bqf-sup-min', b?.sup_min)
   set('bqf-precio-min', b?.precio_min); set('bqf-precio-max', b?.precio_max); set('bqf-moneda', b?.moneda || 'USD')
   set('bqf-estado', b?.estado || 'Activa'); set('bqf-notas', b?.notas)
@@ -9258,7 +9343,11 @@ async function bqGuardarBusqueda() {
     asesor_email = currentUser.email
   }
 
+  const _pendBarrio = document.getElementById('bqz-input')?.value.trim()
+  if (_pendBarrio) bqzAgregar(_pendBarrio)
   const barrios = v('bqf-barrios').split(',').map(s => s.trim()).filter(Boolean)
+  const _dm = parseInt(v('bqf-dorm-min')), _am = parseInt(v('bqf-amb-min'))
+  if ((_dm > 8 || _am > 12) && !confirm(`Revisá los valores: ${_dm > 8 ? _dm + ' dormitorios mínimos' : _am + ' ambientes mínimos'} es muy alto y va a dejar afuera casi todas las propiedades. ¿Guardar igual?`)) return
   const payload = {
     cliente_nombre: cliente,
     cliente_tel: v('bqf-tel') || null,
