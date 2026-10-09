@@ -92,6 +92,21 @@ body { font-family: 'Inter', -apple-system, sans-serif; background: #F1F5F9; col
 .kpi-card.green .kpi-value { color: var(--green); }
 .kpi-card.orange .kpi-value { color: var(--orange); }
 .kpi-card.purple .kpi-value { color: var(--purple); }
+/* ── PENDIENTES (tarjetas clickeables) ── */
+.pend-strip { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1rem; }
+.pend-tile { flex:1 1 200px; display:flex; align-items:center; gap:12px; background:var(--white); border:1px solid var(--border); border-left:4px solid var(--pc); border-radius:10px; padding:10px 14px; cursor:pointer; text-align:left; font:inherit; transition:box-shadow .15s, transform .15s; }
+.pend-tile:hover { box-shadow:0 4px 14px rgba(15,31,61,.08); transform:translateY(-1px); }
+.pend-tile .pn { font-size:22px; font-weight:700; color:var(--pc); line-height:1; min-width:28px; }
+.pend-tile .pt { font-size:12.5px; font-weight:600; color:#1F2937; }
+.pend-tile .ps { font-size:11px; color:#9CA3AF; margin-top:1px; }
+.pend-tile .pa { margin-left:auto; color:#9CA3AF; font-size:16px; }
+.pend-tile.cero { opacity:.55; }
+.pend-ok { font-size:12.5px; color:#15803D; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:9px 14px; margin-bottom:1rem; }
+.pend-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.pend-tabs button { border:1px solid var(--border); background:#fff; border-radius:16px; padding:5px 12px; font-size:12px; cursor:pointer; color:#374151; }
+.pend-tabs button.on { background:#0F1F3D; border-color:#0F1F3D; color:#fff; }
+.pend-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #F3F4F6; font-size:12.5px; color:#374151; }
+.pend-row:last-child { border-bottom:0; }
 
 /* ── TABLES ── */
 .table-card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
@@ -514,6 +529,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
         <span style="font-size:12px;color:#9CA3AF;" id="dash-date"></span>
       </div>
       <div class="page-content">
+        <div id="dash-pendientes"></div>
         <div class="kpi-grid" id="kpi-grid">
           <div class="loading"><div class="spinner"></div></div>
         </div>
@@ -1774,6 +1790,19 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
     </div>
     <div class="modal-body" style="padding:1rem 1.5rem">
       <div id="duplicados-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-pendientes">
+  <div class="modal" style="max-width:820px">
+    <div class="modal-header">
+      <h2>Pendientes</h2>
+      <button class="modal-close" onclick="closeModal('pendientes')">×</button>
+    </div>
+    <div class="modal-body" style="padding:1rem 1.5rem">
+      <div class="pend-tabs" id="pend-tabs"></div>
+      <div id="pend-lista"></div>
     </div>
   </div>
 </div>
@@ -3385,6 +3414,7 @@ async function deleteAlquiler(id) {
 
 // ── DASHBOARD ─────────────────────────────────────────────────────
 async function loadDashboard() {
+  cargarPendientesDash().catch(e => console.warn('pendientes', e))
   const anio = (document.getElementById('filter-anio-dash')?.value) || '2026'
   const { data: ventas } = await sb.from('ventas').select('*')
   const { data: alqs }   = await sb.from('alquileres').select('id')
@@ -7282,6 +7312,7 @@ async function loadComercializacion() {
   })
   renderComercializacion()
   actualizarBadgeVisitas()
+  if (window._pendAbrir) { const t = window._pendAbrir; window._pendAbrir = null; verPendientes(t) }
 }
 
 function _visitasDe(comId) { return visData.filter(v => v.comercializacion_id === comId) }
@@ -7307,41 +7338,10 @@ function renderComercializacion() {
   document.getElementById('com-kpi-prox').textContent = prox.length
   document.getElementById('com-kpi-pend').textContent = pend.length
 
-  // Informes al propietario pendientes (hitos de la autorización)
-  const infPend = comData.filter(c => (c.estado === 'Activa' || c.estado === 'Reservada') && (window.isAdmin || (c.asesor_email || '').toLowerCase() === _yo()))
-    .map(c => ({ c, a: _autz(c) })).filter(x => x.a?.pendientes.length)
-    .sort((x, y) => x.a.pendientes[0].fecha - y.a.pendientes[0].fecha)
-
-  // Aviso de devoluciones pendientes
+  // Pendientes: tarjetas con totales; el detalle se abre en una ventana
   const box = document.getElementById('com-pendientes')
-  const htmlInf = infPend.length ? `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 16px;margin-bottom:10px">
-      <div style="font-weight:700;color:#1E40AF;font-size:13px;margin-bottom:6px">📄 Informes al propietario para preparar</div>
-      ${infPend.slice(0, 8).map(({ c, a }) => { const h = a.pendientes[a.pendientes.length - 1]; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:12.5px;color:#1E3A8A">
-        <span><strong>${raEsc(c.direccion)}</strong> · ${h.nombre} (desde el ${h.fecha.toLocaleDateString('es-AR')})${window.isAdmin ? ' · ' + raEsc(c.asesor || 'Sin asignar') : ''}</span>
-        <button class="action-btn" onclick="openComDetalle('${c.id}')">Ver</button></div>` }).join('')}
-      ${infPend.length > 8 ? `<div style="font-size:11.5px;color:#1E40AF;margin-top:4px">y ${infPend.length - 8} más</div>` : ''}
-    </div>` : ''
-  const consPend = _consultasSinContactar(!window.isAdmin)
-  const htmlCons = consPend.length ? `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 16px;margin-bottom:10px">
-      <div style="font-weight:700;color:#991B1B;font-size:13px;margin-bottom:6px">📩 Consultas sin contactar (más de ${CONS_HORAS_ALERTA} h)</div>
-      ${consPend.slice(0, 8).map(q => { const c = comData.find(x => x.id === q.comercializacion_id); return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:12.5px;color:#7F1D1D">
-        <span>${_fechaHora(q.recibida_at)} · <strong>${raEsc(c?.direccion || q.propiedad_texto || 'Propiedad')}</strong> · ${raEsc(q.portal || '')} · ${raEsc(q.interesado || '')}${window.isAdmin && c ? ' · ' + raEsc(c.asesor || 'Sin asignar') : ''}</span>
-        <button class="action-btn" onclick="openComDetalle('${q.comercializacion_id}')">Ver</button></div>` }).join('')}
-      ${consPend.length > 8 ? `<div style="font-size:11.5px;color:#991B1B;margin-top:4px">y ${consPend.length - 8} más</div>` : ''}
-    </div>` : ''
-  if (pend.length || infPend.length || consPend.length) {
-    box.style.display = 'block'
-    box.innerHTML = htmlCons + htmlInf + (!pend.length ? '' : `<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px">
-      <div style="font-weight:700;color:#92400E;font-size:13px;margin-bottom:6px">⏰ Visitas sin devolución cargada</div>
-      ${pend.slice(0, 8).map(v => {
-        const c = comData.find(x => x.id === v.comercializacion_id)
-        return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:12.5px;color:#78350F">
-          <span>${_fechaHora(v.fecha_hora)} · <strong>${raEsc(c?.direccion || 'Propiedad')}</strong> · ${raEsc(v.interesado || 'Interesado')}${window.isAdmin ? ' · ' + raEsc(v.asesor || '') : ''}</span>
-          <button class="action-btn" onclick="openVisitaPorId('${v.id}')">Cargar devolución</button></div>`
-      }).join('')}
-      ${pend.length > 8 ? `<div style="font-size:11.5px;color:#92400E;margin-top:4px">y ${pend.length - 8} más</div>` : ''}
-    </div>`)
-  } else box.style.display = 'none'
+  box.innerHTML = _pendStripHTML(_pendientesCom())
+  box.style.display = box.innerHTML ? 'block' : 'none'
 
   const tb = document.getElementById('com-tbody')
   if (!lista.length) { tb.innerHTML = '<tr><td colspan="10" class="table-empty">No hay propiedades con estos filtros.</td></tr>'; return }
@@ -7587,6 +7587,95 @@ async function irABusqueda(id) {
   showPage('busquedas')
   for (let i = 0; i < 40 && !(typeof bqData !== 'undefined' && bqData.some(x => x.id === id)); i++) await new Promise(r => setTimeout(r, 150))
   bqAbrir(id)
+}
+
+// ── Pendientes de comercialización (tarjetas y ventana de detalle) ──
+const PEND_TIPOS = {
+  cons: { titulo: 'Consultas sin contactar', sub: `hace más de ${CONS_HORAS_ALERTA} h`, color: '#DC2626' },
+  inf:  { titulo: 'Informes al propietario', sub: 'para preparar', color: '#2563EB' },
+  vis:  { titulo: 'Visitas sin devolución', sub: 'cargar la devolución', color: '#D97706' },
+}
+let _pendTipo = 'cons'
+
+function _pendientesCom() {
+  const mio = x => window.isAdmin || (x.asesor_email || '').toLowerCase() === _yo()
+  const inf = comData.filter(c => (c.estado === 'Activa' || c.estado === 'Reservada') && mio(c))
+    .map(c => ({ c, a: _autz(c) })).filter(x => x.a?.pendientes.length)
+    .sort((x, y) => x.a.pendientes[0].fecha - y.a.pendientes[0].fecha)
+  return {
+    cons: _consultasSinContactar(!window.isAdmin),
+    inf,
+    vis: visData.filter(v => _pendienteDevolucion(v) && mio(v)),
+  }
+}
+
+function _pendStripHTML(p) {
+  const total = p.cons.length + p.inf.length + p.vis.length
+  if (!total) return ''
+  return `<div class="pend-strip">${Object.entries(PEND_TIPOS).map(([k, t]) => {
+    const n = p[k].length
+    return `<button type="button" class="pend-tile${n ? '' : ' cero'}" style="--pc:${t.color}" onclick="verPendientes('${k}')">
+      <span class="pn">${n}</span><span><div class="pt">${t.titulo}</div><div class="ps">${t.sub}</div></span><span class="pa">›</span></button>`
+  }).join('')}</div>`
+}
+
+function verPendientes(tipo) {
+  if (!document.getElementById('page-comercializacion').classList.contains('active')) {
+    showPage('comercializacion')
+    // Se abre cuando terminan de cargar los datos de la sección
+    window._pendAbrir = tipo || 'cons'
+    return
+  }
+  _pendTipo = tipo || _pendTipo
+  renderPendientes()
+  document.getElementById('modal-pendientes').classList.add('open')
+}
+
+function renderPendientes() {
+  const p = _pendientesCom()
+  if (!p[_pendTipo].length) _pendTipo = ['cons', 'inf', 'vis'].find(k => p[k].length) || _pendTipo
+  document.getElementById('pend-tabs').innerHTML = Object.entries(PEND_TIPOS)
+    .map(([k, t]) => `<button class="${k === _pendTipo ? 'on' : ''}" onclick="_pendTipo='${k}';renderPendientes()">${t.titulo} (${p[k].length})</button>`).join('')
+  const asesorDe = c => window.isAdmin && c ? ' · ' + raEsc(c.asesor || 'Sin asignar') : ''
+  const fila = (txt, btn) => `<div class="pend-row"><span>${txt}</span>${btn}</div>`
+  let html = ''
+  if (_pendTipo === 'cons') html = p.cons.map(q => {
+    const c = comData.find(x => x.id === q.comercializacion_id)
+    return fila(`${_fechaHora(q.recibida_at)} · <strong>${raEsc(c?.direccion || q.propiedad_texto || 'Propiedad')}</strong> · ${raEsc(q.portal || '')} · ${raEsc(q.interesado || '')}${asesorDe(c)}`,
+      `<button class="action-btn" onclick="_pendIr(() => openComDetalle('${q.comercializacion_id}'))">Ver</button>`)
+  }).join('')
+  if (_pendTipo === 'inf') html = p.inf.map(({ c, a }) => {
+    const h = a.pendientes[a.pendientes.length - 1]
+    return fila(`<strong>${raEsc(c.direccion)}</strong> · ${h.nombre} (desde el ${h.fecha.toLocaleDateString('es-AR')})${asesorDe(c)}`,
+      `<button class="action-btn" onclick="_pendIr(() => openComDetalle('${c.id}'))">Ver</button>`)
+  }).join('')
+  if (_pendTipo === 'vis') html = p.vis.map(v => {
+    const c = comData.find(x => x.id === v.comercializacion_id)
+    return fila(`${_fechaHora(v.fecha_hora)} · <strong>${raEsc(c?.direccion || 'Propiedad')}</strong> · ${raEsc(v.interesado || 'Interesado')}${window.isAdmin ? ' · ' + raEsc(v.asesor || '') : ''}`,
+      `<button class="action-btn" onclick="_pendIr(() => openVisitaPorId('${v.id}'))">Cargar devolución</button>`)
+  }).join('')
+  document.getElementById('pend-lista').innerHTML = html || '<div style="font-size:12.5px;color:#15803D;padding:8px 0">No hay pendientes en esta categoría.</div>'
+}
+
+function _pendIr(fn) { closeModal('pendientes'); fn() }
+
+// Tarjetas del Dashboard: lo primero que ve cada usuario al entrar
+async function cargarPendientesDash() {
+  const el = document.getElementById('dash-pendientes')
+  if (!el) return
+  if (!comData.length) {
+    const [rc, rv] = await Promise.all([
+      sb.from('comercializaciones').select('*'),
+      sb.from('visitas').select('*').in('estado', ['Agendada', 'Realizada']),
+    ])
+    if (rc.error) return
+    comData = rc.data || []
+    visData = rv.data || []
+    await _cargarConsultas()
+  }
+  const p = _pendientesCom()
+  const html = _pendStripHTML(p)
+  el.innerHTML = html ? `<div class="section-title" style="margin-bottom:8px">${window.isAdmin ? 'Pendientes del equipo' : 'Mis pendientes'}</div>${html}` : '<div class="pend-ok">✓ Sin pendientes de comercialización.</div>'
 }
 
 // ── Badge del menú (devoluciones pendientes propias) ────────────────
