@@ -7019,8 +7019,10 @@ async function loadComercializacion() {
     if (!window.isAdmin) { selA.value = '__mias__'; selA.querySelector('option[value="__sin__"]')?.remove() }
   }
   document.getElementById('com-btn-sync').style.display = window.isAdmin ? '' : 'none'
-  const ult = comData.map(c => c.sincronizado_at).filter(Boolean).sort().pop()
-  document.getElementById('com-sync-info').textContent = ult ? 'Tokko: ' + new Date(ult).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
+  sb.from('sync_estado').select('ultimo_at').eq('clave', 'tokko').maybeSingle().then(({ data }) => {
+    const ult = data?.ultimo_at || comData.map(c => c.sincronizado_at).filter(Boolean).sort().pop()
+    document.getElementById('com-sync-info').textContent = ult ? 'Tokko: ' + new Date(ult).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
+  })
   renderComercializacion()
   actualizarBadgeVisitas()
 }
@@ -7456,7 +7458,7 @@ async function sincronizarTokko() {
     const res = await _callEdgeFn('tokko-sync', {})
     const r = await res.json()
     if (!res.ok || r.error) throw new Error(r.error || 'Error ' + res.status)
-    toast(`Tokko: ${r.tokko} propiedades · ${r.nuevas} nuevas · ${r.actualizadas} actualizadas${r.cambios_precio ? ' · ' + r.cambios_precio + ' cambios de precio' : ''}`)
+    toast((r.nuevas || r.actualizadas) ? `Tokko: ${r.nuevas} nuevas · ${r.actualizadas} actualizadas${r.cambios_precio ? ' · ' + r.cambios_precio + ' cambios de precio' : ''}` : `Tokko: sin cambios (${r.tokko} propiedades al día)`)
     await loadComercializacion()
   } catch (e) {
     toast('No se pudo sincronizar con Tokko: ' + e.message, true)

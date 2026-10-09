@@ -106,3 +106,14 @@ alter table public.comercializaciones add column if not exists datos_tokko     j
 alter table public.comercializaciones add column if not exists sincronizado_at timestamptz;
 alter table public.comercializaciones add column if not exists asesor_manual   boolean not null default false;
 alter table public.comercializaciones alter column portales set default array['Zonaprop','Argenprop','MercadoLibre','Properati','Meta','Web Real Aires'];
+
+-- Sincronización incremental (agregado)
+alter table public.comercializaciones add column if not exists tokko_hash text;
+create table if not exists public.sync_estado (
+  clave     text primary key,
+  ultimo_at timestamptz,
+  resumen   jsonb
+);
+alter table public.sync_estado enable row level security;
+drop policy if exists sync_estado_select on public.sync_estado;
+create policy sync_estado_select on public.sync_estado for select to authenticated using (true);
