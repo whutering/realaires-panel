@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   try {
     const [props, { data: existentes }, { data: asesores }] = await Promise.all([
       traerTokko(),
-      admin.from('comercializaciones').select('id, tokko_id, direccion, precio, moneda, historial_precios, estado, asesor, asesor_email, asesor_manual, fecha_publicacion, propietario, portales'),
+      admin.from('comercializaciones').select('id, tokko_id, tokko_hash, direccion, precio, moneda, historial_precios, estado, asesor, asesor_email, asesor_manual, fecha_publicacion, propietario, portales'),
       admin.from('asesores').select('nombre, mail, activo'),
     ])
     const porTokko = new Map((existentes || []).filter(c => c.tokko_id).map(c => [Number(c.tokko_id), c]))
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     const asesorPorNombre = new Map((asesores || []).map(a => [norm(a.nombre), a]))
     const asesorPorMail   = new Map((asesores || []).filter(a => a.mail).map(a => [a.mail.toLowerCase(), a]))
 
-    const resumen = { tokko: props.length, nuevas: 0, actualizadas: 0, vinculadas: 0, cambios_precio: 0, errores: [] as string[] }
+    const resumen = { tokko: props.length, nuevas: 0, actualizadas: 0, sin_cambios: 0, vinculadas: 0, cambios_precio: 0, errores: [] as string[] }
     const filas: any[] = []
 
     for (const p of props) {
@@ -133,14 +133,19 @@ Deno.serve(async (req) => {
           foto: (p.photos || []).find((f: any) => f.is_front_cover)?.image || (p.photos || [])[0]?.image || null,
           lat: p.geo_lat || null, lng: p.geo_long || null,
         },
-        sincronizado_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       }
       // El asesor se toma de Tokko salvo que un administrador lo haya asignado a mano en el panel
       // (todas las filas llevan las mismas columnas para que el guardado en tanda no pise datos)
       if (!prev?.asesor_manual && asesor) { fila.asesor = asesor.nombre; fila.asesor_email = asesor.mail || null }
       else { fila.asesor = prev?.asesor ?? null; fila.asesor_email = prev?.asesor_email ?? null }
 
+      // Solo se guarda si algo cambió respecto de la última sincronización
+      const { id: _id, ...comparable } = fila
+      const hash = JSON.stringify(comparable)
+      if (prev && prev.tokko_id && prev.tokko_hash === hash) { resumen.sin_cambios++; continue }
+      fila.tokko_hash = hash
+      fila.sincronizado_at = new Date().toISOString()
+      fila.updated_at = new Date().toISOString()
       prev ? resumen.actualizadas++ : resumen.nuevas++
       filas.push(fila)
     }
@@ -153,7 +158,11 @@ Deno.serve(async (req) => {
       if (sinId.length) { const { error } = await admin.from('comercializaciones').upsert(sinId, { onConflict: 'tokko_id' }); if (error) resumen.errores.push(error.message) }
     }
 
-    await admin.from('logs').insert({ usuario: 'tokko-sync', accion: 'sincronizar_tokko', entidad: 'comercializaciones', detalle: resumen })
+    // Estado de la última corrida (lo muestra el panel) y registro en el historial solo si hubo novedades
+    await admin.from('sync_estado').upsert({ clave: 'tokko', ultimo_at: new Date().toISOString(), resumen })
+    if (resumen.nuevas || resumen.actualizadas || resumen.errores.length) {
+      await admin.from('logs').insert({ usuario: 'tokko-sync', accion: 'sincronizar_tokko', entidad: 'comercializaciones', detalle: resumen })
+    }
     return json({ ok: resumen.errores.length === 0, ...resumen })
   } catch (e) {
     console.error(e)
