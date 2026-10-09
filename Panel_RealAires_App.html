@@ -709,7 +709,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
             <table>
               <thead>
                 <tr>
-                  <th>Propiedad</th><th>Asesor</th><th>Precio</th><th>Publicada</th>
+                  <th>Propiedad</th><th>Asesor</th><th>Precio</th><th>Autorización</th>
                   <th>Visitas</th><th>Próxima visita</th><th>Última etapa</th><th>Estado</th><th></th>
                 </tr>
               </thead>
@@ -1617,7 +1617,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
     </div>
     <div class="modal-body">
       <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:10px 14px;margin-bottom:14px">
-        <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600">Operación</div>
+        <div id="rep-tipo-label" style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.4px;font-weight:600">Operación</div>
         <div id="rep-inmueble" style="font-size:14px;font-weight:700;color:#0F1F3D;margin-top:2px"></div>
       </div>
       <div class="form-grid">
@@ -1770,6 +1770,14 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
         <div class="form-group"><label>Estado</label>
           <select id="com-estado"><option>Activa</option><option>Pausada</option><option>Reservada</option><option>Vendida</option><option>Retirada</option></select>
         </div>
+        <div class="form-group full" style="margin-top:4px">
+          <label>Autorización de venta</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <span style="font-size:12.5px;color:#4B5563">Desde</span><input type="date" id="com-autz-inicio" style="max-width:170px" oninput="renderAutzCom()" />
+            <span style="font-size:12.5px;color:#4B5563">Vigencia</span><input type="number" id="com-autz-dias" min="1" step="1" style="max-width:90px" oninput="renderAutzCom()" /><span style="font-size:12.5px;color:#4B5563">días</span>
+          </div>
+          <div id="com-autz-barra" style="margin-top:12px"></div>
+        </div>
         <div class="form-group full"><label>Portales</label>
           <div style="font-size:13px;color:#374151"><span id="com-portales-resumen"></span>
             <a href="#" id="com-portales-toggle" onclick="document.getElementById('com-portales').style.display='flex';this.style.display='none';return false" style="color:#2563EB;font-weight:600;font-size:12px;margin-left:6px">Modificar</a></div>
@@ -1790,7 +1798,8 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
-      <div><button id="com-btn-eliminar" class="btn-cancel" style="border-color:#DC2626;color:#DC2626;display:none" onclick="eliminarCom()">🗑 Eliminar</button></div>
+      <div style="display:flex;gap:8px"><button id="com-btn-eliminar" class="btn-cancel" style="border-color:#DC2626;color:#DC2626;display:none" onclick="eliminarCom()">🗑 Eliminar</button>
+        <button id="com-btn-reportar" class="btn-cancel" style="border-color:#D97706;color:#D97706;display:none" onclick="openReporte({ id: _comActual.id, inmueble: _comActual.direccion, _com: _comActual })">⚠️ Reportar dato</button></div>
       <div style="display:flex;gap:8px">
         <button class="btn-cancel" onclick="closeModal('com')">Cerrar</button>
         <button class="btn-save" id="com-btn-guardar" onclick="saveCom()">Guardar</button>
@@ -6701,9 +6710,15 @@ async function crearEventoGoogle(ev, urlPlantilla) {
 // ── REPORTES DE ASESORES ───────────────────────────────────────────
 let _reporteVenta = null
 
+const REP_CAT_OPERACION = ['Datos del inmueble', 'Montos o comisión', 'Fechas (reserva, conformidad, escritura)', 'Asesores asignados', 'Estado de la operación', 'Otro']
+const REP_CAT_PROPIEDAD = ['Precio', 'Dirección o ubicación', 'Superficies o ambientes', 'Fotos o descripción', 'Estado (vendida, reservada, retirada)', 'Asesor asignado', 'Otro']
+
 function openReporte(r) {
   _reporteVenta = r
-  document.getElementById('rep-inmueble').textContent = r.inmueble || 'Operación'
+  const esProp = !!r._com
+  document.getElementById('rep-tipo-label').textContent = esProp ? 'Propiedad' : 'Operación'
+  document.getElementById('rep-inmueble').textContent = r.inmueble || (esProp ? 'Propiedad' : 'Operación')
+  document.getElementById('rep-categoria').innerHTML = (esProp ? REP_CAT_PROPIEDAD : REP_CAT_OPERACION).map(o => `<option>${o}</option>`).join('')
   document.getElementById('rep-categoria').selectedIndex = 0
   document.getElementById('rep-detalle').value = ''
   const btn = document.getElementById('rep-enviar')
@@ -6725,7 +6740,8 @@ async function enviarReporte() {
   btn.disabled = true; btn.textContent = 'Enviando...'
 
   const fila = {
-    venta_id: String(r.id),
+    venta_id: r._com ? null : String(r.id),
+    comercializacion_id: r._com ? r._com.id : null,
     inmueble: r.inmueble || null,
     asesor_nombre: window.currentUserNombre || currentUser?.email || null,
     asesor_email: currentUser?.email,
@@ -6738,7 +6754,7 @@ async function enviarReporte() {
     toast('No se pudo enviar el reporte: ' + error.message, true)
     return
   }
-  registrarLog('reportar_venta', 'ventas', r.id, { inmueble: r.inmueble, categoria: fila.categoria })
+  registrarLog(r._com ? 'reportar_propiedad' : 'reportar_venta', r._com ? 'comercializaciones' : 'ventas', r._com ? r._com.id : r.id, { inmueble: r.inmueble, categoria: fila.categoria })
 
   let mailOk = false
   try {
@@ -6793,6 +6809,7 @@ function renderReportesAdmin() {
       ${!pend && r.resuelto_por ? `<div style="font-size:11px;color:#9CA3AF;margin-top:6px">Resuelto por ${raEsc(r.resuelto_por)}</div>` : ''}
       <div style="display:flex;gap:6px;margin-top:10px">
         ${r.venta_id ? `<button class="action-btn" onclick="abrirOpDesdeReporte('${raEsc(r.venta_id)}')">Abrir operación</button>` : ''}
+        ${r.comercializacion_id ? `<button class="action-btn" onclick="abrirComDesdeReporte('${raEsc(r.comercializacion_id)}')">Abrir propiedad</button>` : ''}
         ${pend ? `<button class="action-btn" style="border-color:#86EFAC;color:#15803D" onclick="resolverReporte('${raEsc(r.id)}')">Marcar resuelto</button>` : ''}
       </div>
     </div>`
@@ -6809,6 +6826,13 @@ async function resolverReporte(id) {
   registrarLog('resolver_reporte', 'reportes_operacion', id, { inmueble: rep?.inmueble })
   renderReportesAdmin()
   loadReportesCount()
+}
+
+async function abrirComDesdeReporte(id) {
+  if (!comData.length) await loadComercializacion()
+  if (!comData.find(c => c.id === id)) { toast('La propiedad ya no está en Comercialización', true); return }
+  closeModal('reportes-admin')
+  openComDetalle(id)
 }
 
 function abrirOpDesdeReporte(ventaId) {
@@ -7050,11 +7074,23 @@ function renderComercializacion() {
   document.getElementById('com-kpi-prox').textContent = prox.length
   document.getElementById('com-kpi-pend').textContent = pend.length
 
+  // Informes al propietario pendientes (hitos de la autorización)
+  const infPend = comData.filter(c => (c.estado === 'Activa' || c.estado === 'Reservada') && (window.isAdmin || (c.asesor_email || '').toLowerCase() === _yo()))
+    .map(c => ({ c, a: _autz(c) })).filter(x => x.a?.pendientes.length)
+    .sort((x, y) => x.a.pendientes[0].fecha - y.a.pendientes[0].fecha)
+
   // Aviso de devoluciones pendientes
   const box = document.getElementById('com-pendientes')
-  if (pend.length) {
+  const htmlInf = infPend.length ? `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:12px 16px;margin-bottom:10px">
+      <div style="font-weight:700;color:#1E40AF;font-size:13px;margin-bottom:6px">📄 Informes al propietario para preparar</div>
+      ${infPend.slice(0, 8).map(({ c, a }) => { const h = a.pendientes[a.pendientes.length - 1]; return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:12.5px;color:#1E3A8A">
+        <span><strong>${raEsc(c.direccion)}</strong> · ${h.nombre} (desde el ${h.fecha.toLocaleDateString('es-AR')})${window.isAdmin ? ' · ' + raEsc(c.asesor || 'Sin asignar') : ''}</span>
+        <button class="action-btn" onclick="openComDetalle('${c.id}')">Ver</button></div>` }).join('')}
+      ${infPend.length > 8 ? `<div style="font-size:11.5px;color:#1E40AF;margin-top:4px">y ${infPend.length - 8} más</div>` : ''}
+    </div>` : ''
+  if (pend.length || infPend.length) {
     box.style.display = 'block'
-    box.innerHTML = `<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px">
+    box.innerHTML = htmlInf + (!pend.length ? '' : `<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px">
       <div style="font-weight:700;color:#92400E;font-size:13px;margin-bottom:6px">⏰ Visitas sin devolución cargada</div>
       ${pend.slice(0, 8).map(v => {
         const c = comData.find(x => x.id === v.comercializacion_id)
@@ -7063,7 +7099,7 @@ function renderComercializacion() {
           <button class="action-btn" onclick="openVisitaPorId('${v.id}')">Cargar devolución</button></div>`
       }).join('')}
       ${pend.length > 8 ? `<div style="font-size:11.5px;color:#92400E;margin-top:4px">y ${pend.length - 8} más</div>` : ''}
-    </div>`
+    </div>`)
   } else box.style.display = 'none'
 
   const tb = document.getElementById('com-tbody')
@@ -7079,7 +7115,7 @@ function renderComercializacion() {
       <td style="font-weight:600;max-width:260px"><div style="display:flex;gap:8px;align-items:center">${c.datos_tokko?.foto ? `<img src="${raEsc(c.datos_tokko.foto)}" alt="" loading="lazy" style="width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0">` : ''}<div style="min-width:0"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raEsc(c.direccion)}</div><div style="font-size:11px;color:#9CA3AF;font-weight:400">${raEsc(c.barrio || '')}${c.propietario ? ' · ' + raEsc(c.propietario) : ''}${c.tokko_ref ? ' · ' + raEsc(c.tokko_ref) : ''}</div></div></div></td>
       <td>${c.asesor ? raEsc(c.asesor) : '<span style="color:#D97706;font-size:12px">Sin asignar</span>'}</td>
       <td>${c.precio ? raEsc(c.moneda) + ' ' + Number(c.precio).toLocaleString('es-AR') : '—'}</td>
-      <td style="color:#6B7280">${dias === null ? '—' : dias + ' días'}</td>
+      <td style="min-width:150px">${_autzMini(c)}</td>
       <td style="text-align:center"><strong>${realizadas}</strong><span style="color:#9CA3AF"> / ${vs.length}</span>${pendC ? ' <span title="Devoluciones pendientes" style="color:#D97706">⏰' + pendC + '</span>' : ''}</td>
       <td style="color:#374151;font-size:12px">${proxima ? _fechaHora(proxima.fecha_hora) : '—'}</td>
       <td style="font-size:12px">${ultEtapa ? raEsc(ultEtapa.etapa) : '—'}</td>
@@ -7088,6 +7124,91 @@ function renderComercializacion() {
         <button class="action-btn" style="border-color:#93C5FD;color:#1D4ED8" onclick="openComDetalle('${c.id}');setTimeout(()=>openVisita(),50)">+ Visita</button></td>
     </tr>`
   }).join('')
+}
+
+// ── Autorización de venta: vigencia, barra de tiempo e hitos de informe ──
+const AUTZ_HITOS = 4
+function _autz(c, inicioStr, diasNum) {
+  const ini = inicioStr || c?.autorizacion_inicio || c?.fecha_publicacion
+  const dias = diasNum || c?.autorizacion_dias || 120
+  if (!ini) return null
+  const inicio = parseLocalDate(ini)
+  const fin = new Date(inicio); fin.setDate(fin.getDate() + dias)
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+  const trans = Math.round((hoy - inicio) / 864e5)
+  const pct = Math.max(0, Math.min(100, trans / dias * 100))
+  const enviados = new Set((c?.informes_enviados || []).map(x => x.n))
+  const hitos = Array.from({ length: AUTZ_HITOS }, (_, i) => {
+    const n = i + 1
+    const fecha = new Date(inicio); fecha.setDate(fecha.getDate() + Math.round(dias * n / AUTZ_HITOS))
+    const nombre = n === AUTZ_HITOS ? 'Informe final y renovación' : `Informe ${n}`
+    const estado = enviados.has(n) ? 'enviado' : (fecha <= hoy ? 'pendiente' : 'futuro')
+    return { n, fecha, nombre, estado, pct: n / AUTZ_HITOS * 100 }
+  })
+  const diasRest = Math.round((fin - hoy) / 864e5)
+  const color = diasRest < 0 ? '#DC2626' : pct < 50 ? '#16A34A' : pct < 75 ? '#EAB308' : pct < 90 ? '#F97316' : '#DC2626'
+  return { inicio, fin, dias, pct, diasRest, color, hitos, pendientes: hitos.filter(h => h.estado === 'pendiente') }
+}
+
+function _autzMini(c) {
+  const a = _autz(c)
+  if (!a) return '<span style="color:#9CA3AF;font-size:12px">Sin fecha</span>'
+  const marcas = a.hitos.map(h => `<span style="position:absolute;left:${h.pct}%;top:-2px;width:2px;height:12px;margin-left:-1px;background:${h.estado === 'enviado' ? '#16A34A' : h.estado === 'pendiente' ? '#2563EB' : '#D1D5DB'}"></span>`).join('')
+  const txt = a.diasRest < 0 ? `Vencida hace ${-a.diasRest} d` : `${a.diasRest} d restantes`
+  return `<div title="Del ${a.inicio.toLocaleDateString('es-AR')} al ${a.fin.toLocaleDateString('es-AR')}">
+    <div style="position:relative;height:8px;background:#F3F4F6;border-radius:4px;margin-top:4px">
+      <div style="height:100%;width:${a.pct}%;background:${a.color};border-radius:4px"></div>${marcas}</div>
+    <div style="font-size:11px;color:${a.diasRest < 0 ? '#DC2626' : '#6B7280'};margin-top:4px">${txt}${a.pendientes.length ? ' · <span style="color:#2563EB;font-weight:700">📄 informe</span>' : ''}</div></div>`
+}
+
+function renderAutzCom() {
+  const el = document.getElementById('com-autz-barra')
+  if (!el) return
+  const c = _comActual
+  const ini = document.getElementById('com-autz-inicio').value
+  const dias = parseInt(document.getElementById('com-autz-dias').value) || 120
+  const a = _autz(c || {}, ini, dias)
+  if (!a) { el.innerHTML = '<div style="font-size:12px;color:#9CA3AF">Cargá la fecha de inicio para ver la vigencia.</div>'; return }
+  // Divisiones por mes
+  const meses = []
+  const m = new Date(a.inicio.getFullYear(), a.inicio.getMonth() + 1, 1)
+  while (m < a.fin) { meses.push(new Date(m)); m.setMonth(m.getMonth() + 1) }
+  const pos = d => Math.max(0, Math.min(100, (d - a.inicio) / (a.fin - a.inicio) * 100))
+  const NOM = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+  const puede = !c || _puedeEditarCom(c)
+  const estadoTxt = a.diasRest < 0 ? `<strong style="color:#DC2626">Vencida hace ${-a.diasRest} días</strong>` : `<strong style="color:${a.color}">${a.diasRest} días restantes</strong> de ${a.dias}`
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#4B5563;margin-bottom:6px">
+      <span>${a.inicio.toLocaleDateString('es-AR')}</span><span>${estadoTxt}</span><span>Vence ${a.fin.toLocaleDateString('es-AR')}</span>
+    </div>
+    <div style="position:relative;height:14px;background:#F3F4F6;border-radius:7px;margin:0 6px">
+      <div style="height:100%;width:${a.pct}%;background:${a.color};border-radius:7px;transition:width .3s"></div>
+      ${meses.map(d => `<div style="position:absolute;left:${pos(d)}%;top:0;bottom:0;width:1px;background:rgba(255,255,255,.9)"></div>
+        <div style="position:absolute;left:${pos(d)}%;top:17px;transform:translateX(-50%);font-size:10px;color:#9CA3AF">${NOM[d.getMonth()]}</div>`).join('')}
+      ${a.hitos.map(h => `<div title="${h.nombre} · ${h.fecha.toLocaleDateString('es-AR')}" style="position:absolute;left:${h.pct}%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px ${h.estado === 'enviado' ? '#16A34A' : h.estado === 'pendiente' ? '#2563EB' : '#D1D5DB'};background:${h.estado === 'enviado' ? '#16A34A' : h.estado === 'pendiente' ? '#2563EB' : '#fff'};font-size:9px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">${h.estado === 'enviado' ? '✓' : ''}</div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(${AUTZ_HITOS},1fr);gap:8px;margin-top:28px">
+      ${a.hitos.map(h => `<div style="border:1px solid ${h.estado === 'pendiente' ? '#BFDBFE' : '#E5E7EB'};background:${h.estado === 'pendiente' ? '#EFF6FF' : h.estado === 'enviado' ? '#F0FDF4' : '#fff'};border-radius:8px;padding:8px 10px">
+        <div style="font-size:11.5px;font-weight:700;color:#0F1F3D">${h.nombre}</div>
+        <div style="font-size:11px;color:#6B7280">${h.fecha.toLocaleDateString('es-AR')}</div>
+        <div style="font-size:11px;margin-top:4px;font-weight:600;color:${h.estado === 'enviado' ? '#15803D' : h.estado === 'pendiente' ? '#1D4ED8' : '#9CA3AF'}">${h.estado === 'enviado' ? '✓ Enviado' : h.estado === 'pendiente' ? 'Preparar ahora' : 'Próximo'}</div>
+        ${c?.id && puede && h.estado === 'pendiente' ? `<button class="action-btn" style="margin-top:6px;font-size:10.5px" onclick="marcarInformeEnviado(${h.n})">Marcar enviado</button>` : ''}
+        ${c?.id && puede && h.estado === 'enviado' ? `<button class="action-btn" style="margin-top:6px;font-size:10.5px;color:#9CA3AF" onclick="marcarInformeEnviado(${h.n}, true)">Deshacer</button>` : ''}
+      </div>`).join('')}
+    </div>`
+}
+
+async function marcarInformeEnviado(n, deshacer) {
+  const c = _comActual
+  if (!c) return
+  let lista = (c.informes_enviados || []).filter(x => x.n !== n)
+  if (!deshacer) lista.push({ n, fecha: dateKey(new Date()), por: currentUser?.email || null })
+  const { error } = await sb.from('comercializaciones').update({ informes_enviados: lista }).eq('id', c.id)
+  if (error) { toast('No se pudo guardar: ' + error.message, true); return }
+  c.informes_enviados = lista
+  registrarLog(deshacer ? 'desmarcar_informe' : 'informe_enviado', 'comercializaciones', c.id, { direccion: c.direccion, hito: n })
+  toast(deshacer ? 'Informe marcado como pendiente' : 'Informe registrado como enviado')
+  renderAutzCom(); renderComercializacion(); actualizarBadgeVisitas()
 }
 
 // ── Badge del menú (devoluciones pendientes propias) ────────────────
@@ -7099,7 +7220,13 @@ async function actualizarBadgeVisitas() {
     const { data } = await sb.from('visitas').select('id, estado, fecha_hora, devolucion, valoraciones, asesor_email').in('estado', ['Agendada', 'Realizada'])
     lista = data || []
   }
+  let props = comData
+  if (!props.length) {
+    const { data } = await sb.from('comercializaciones').select('id, estado, asesor_email, fecha_publicacion, autorizacion_inicio, autorizacion_dias, informes_enviados').in('estado', ['Activa', 'Reservada'])
+    props = data || []
+  }
   const n = lista.filter(v => _pendienteDevolucion(v) && (v.asesor_email || '').toLowerCase() === _yo()).length
+    + props.filter(c => (c.asesor_email || '').toLowerCase() === _yo() && _autz(c)?.pendientes.length).length
   badge.textContent = n
   badge.style.display = n ? 'inline-block' : 'none'
 }
@@ -7142,7 +7269,8 @@ function _setComForm(c) {
     tk.innerHTML = `<div style="display:flex;gap:12px;align-items:center;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:10px 12px">
       ${d.foto ? `<img src="${raEsc(d.foto)}" alt="" style="width:72px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0">` : ''}
       <div style="min-width:0;flex:1">
-        <div style="font-size:12px;font-weight:700;color:#0F1F3D">Tokko ${raEsc(c.tokko_ref || '')} ${c.tokko_url ? `· <a href="${raEsc(c.tokko_url)}" target="_blank" rel="noopener" style="color:#2563EB">Ver ficha</a>` : ''}</div>
+        <div style="font-size:12px;font-weight:700;color:#0F1F3D">Tokko ${raEsc(c.tokko_ref || '')} ${c.tokko_url ? `· <a href="${raEsc(c.tokko_url)}" target="_blank" rel="noopener" style="color:#2563EB">Ver ficha</a>` : ''}
+          ${_puedeEditarCom(c) ? `· <a href="https://www.tokkobroker.com/property/${encodeURIComponent(c.tokko_id)}/" target="_blank" rel="noopener" style="color:#2563EB">✏️ Editar en Tokko</a>` : ''}</div>
         <div style="font-size:12px;color:#4B5563;margin-top:2px">${raEsc(ficha)}</div>
         <div style="font-size:11px;color:#9CA3AF;margin-top:2px">Dirección, precio y estado se actualizan desde Tokko${c.sincronizado_at ? ' · última vez ' + new Date(c.sincronizado_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</div>
       </div></div>`
@@ -7151,7 +7279,11 @@ function _setComForm(c) {
   document.getElementById('com-historial').innerHTML = hist.length > 1
     ? 'Historial de precio: ' + hist.map(h => `${formatDate(h.fecha)} ${raEsc(h.moneda || '')} ${Number(h.precio).toLocaleString('es-AR')}`).join(' → ')
     : ''
+  document.getElementById('com-autz-inicio').value = c?.autorizacion_inicio || c?.fecha_publicacion || ''
+  document.getElementById('com-autz-dias').value = c?.autorizacion_dias || 120
   const editable = !c || _puedeEditarCom(c)
+  document.getElementById('com-btn-reportar').style.display = (c && !editable) ? 'inline-flex' : 'none'
+  setTimeout(renderAutzCom, 0)
   document.querySelectorAll('#modal-com .modal-body input, #modal-com .modal-body select, #modal-com .modal-body textarea').forEach(el => { if (el.id !== 'com-desde-ficha') el.disabled = !editable })
   document.querySelectorAll('#com-portales .com-chip').forEach(b => b.disabled = !editable)
   document.getElementById('com-portales-toggle').style.display = editable ? '' : 'none'
@@ -7220,6 +7352,8 @@ async function saveCom() {
     portales: _chipsValor('com-portales'),
     link_aviso: document.getElementById('com-link').value.trim() || null,
     notas: document.getElementById('com-notas').value.trim() || null,
+    autorizacion_inicio: document.getElementById('com-autz-inicio').value || null,
+    autorizacion_dias: parseInt(document.getElementById('com-autz-dias').value) || 120,
     updated_at: new Date().toISOString(),
   }
   // Historial de precios: se registra cada cambio

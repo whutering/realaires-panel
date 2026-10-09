@@ -51,6 +51,12 @@ Deno.serve(async (req) => {
     const { data } = await admin.from('ventas').select('*').eq('id', rep.venta_id).maybeSingle()
     op = data
   }
+  // Reporte sobre una propiedad en comercialización: también avisa al asesor responsable
+  let prop: Record<string, any> | null = null
+  if (rep.comercializacion_id) {
+    const { data } = await admin.from('comercializaciones').select('direccion, asesor, asesor_email, tokko_ref').eq('id', rep.comercializacion_id).maybeSingle()
+    prop = data
+  }
 
   // 3. Armar y enviar el correo
   const destino   = Deno.env.get('REPORTES_DESTINO')   ?? 'pabloe@realaires.com.ar'
@@ -64,12 +70,14 @@ Deno.serve(async (req) => {
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;color:#111827">
     <div style="background:#0A0A0A;color:#fff;padding:16px 20px;border-radius:10px 10px 0 0">
       <div style="font-size:12px;opacity:.7">Panel Real Aires</div>
-      <div style="font-size:18px;font-weight:700">Nuevo reporte sobre una operación</div>
+      <div style="font-size:18px;font-weight:700">Nuevo reporte sobre ${prop ? 'una propiedad' : 'una operación'}</div>
     </div>
     <div style="border:1px solid #E5E7EB;border-top:none;border-radius:0 0 10px 10px;padding:18px 20px">
       <table style="border-collapse:collapse;width:100%;margin-bottom:14px">
         ${fila('Inmueble', rep.inmueble)}
-        ${fila('Asesor', rep.asesor_nombre)}
+        ${fila(prop ? 'Reportado por' : 'Asesor', rep.asesor_nombre)}
+        ${prop ? fila('Asesor responsable', prop.asesor || 'Sin asignar') : ''}
+        ${prop?.tokko_ref ? fila('Código Tokko', prop.tokko_ref) : ''}
         ${fila('Email del asesor', rep.asesor_email)}
         ${fila('Tipo de corrección', rep.categoria)}
         ${fila('Fecha del reporte', fecha)}
@@ -90,6 +98,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from: remitente,
       to: [destino],
+      ...(prop?.asesor_email && prop.asesor_email !== destino && prop.asesor_email !== rep.asesor_email ? { cc: [prop.asesor_email] } : {}),
       reply_to: rep.asesor_email,
       subject: `Reporte de ${rep.asesor_nombre ?? rep.asesor_email} · ${rep.inmueble ?? 'Operación'}`,
       html,
