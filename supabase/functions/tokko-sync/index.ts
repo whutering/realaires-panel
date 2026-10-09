@@ -13,7 +13,7 @@ const PORTALES  = ['Zonaprop', 'Argenprop', 'MercadoLibre', 'Properati', 'Meta',
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-cron-secret',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 const json = (body: unknown, status = 200) =>
@@ -56,7 +56,10 @@ Deno.serve(async (req) => {
 
   // Autorización: el Cron de Supabase (clave de servicio) o un administrador del panel
   const token = (req.headers.get('Authorization') || '').replace('Bearer ', '')
-  if (token !== SRV_KEY) {
+  // El Cron se identifica con el encabezado x-cron-secret (secret CRON_SECRET)
+  const cronSecret = Deno.env.get('CRON_SECRET')
+  const esCron = token === SRV_KEY || (!!cronSecret && req.headers.get('x-cron-secret') === cronSecret)
+  if (!esCron) {
     const userClient = createClient(SB_URL, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: `Bearer ${token}` } } })
     const { data: { user } } = await userClient.auth.getUser()
     if (!user) return json({ error: 'No autenticado' }, 401)
@@ -65,7 +68,7 @@ Deno.serve(async (req) => {
   }
 
   // Llamado del Cron: responde enseguida y sincroniza en segundo plano
-  if (token === SRV_KEY) {
+  if (esCron) {
     EdgeRuntime.waitUntil(sincronizar(admin).catch(e => console.error('tokko-sync', e)))
     return json({ ok: true, en_curso: true }, 202)
   }
