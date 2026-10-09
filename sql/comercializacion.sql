@@ -117,3 +117,10 @@ create table if not exists public.sync_estado (
 alter table public.sync_estado enable row level security;
 drop policy if exists sync_estado_select on public.sync_estado;
 create policy sync_estado_select on public.sync_estado for select to authenticated using (true);
+
+-- Autorización de venta e informes al propietario (agregado)
+alter table public.comercializaciones add column if not exists autorizacion_inicio date;
+alter table public.comercializaciones add column if not exists autorizacion_dias   int not null default 120;
+alter table public.comercializaciones add column if not exists informes_enviados   jsonb not null default '[]';
+alter table public.comercializaciones add column if not exists informes_avisados   int[] not null default '{}';
+alter table public.reportes_operacion  add column if not exists comercializacion_id uuid;
