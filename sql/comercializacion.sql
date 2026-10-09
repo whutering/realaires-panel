@@ -94,3 +94,15 @@ create policy vis_update on public.visitas for update to authenticated
   with check (public.ra_es_admin() or asesor_email = (auth.jwt() ->> 'email'));
 create policy vis_delete on public.visitas for delete to authenticated
   using (public.ra_es_admin() or asesor_email = (auth.jwt() ->> 'email'));
+
+-- ════════════════════════════════════════════════════════════════════
+-- SINCRONIZACIÓN CON TOKKO BROKER (agregado)
+-- ════════════════════════════════════════════════════════════════════
+alter table public.comercializaciones add column if not exists tokko_id        bigint unique;
+alter table public.comercializaciones add column if not exists tokko_ref       text;
+alter table public.comercializaciones add column if not exists tokko_url       text;
+alter table public.comercializaciones add column if not exists tokko_status    int;
+alter table public.comercializaciones add column if not exists datos_tokko     jsonb not null default '{}';
+alter table public.comercializaciones add column if not exists sincronizado_at timestamptz;
+alter table public.comercializaciones add column if not exists asesor_manual   boolean not null default false;
+alter table public.comercializaciones alter column portales set default array['Zonaprop','Argenprop','MercadoLibre','Properati','Meta','Web Real Aires'];

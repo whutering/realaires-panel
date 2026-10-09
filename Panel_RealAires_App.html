@@ -675,10 +675,9 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
       <div class="page-header">
         <h1>Comercialización</h1>
         <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn-add" onclick="openComNueva()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nueva propiedad
-          </button>
+          <span id="com-sync-info" style="font-size:11.5px;color:#9CA3AF"></span>
+          <button id="com-btn-sync" class="btn-add" onclick="sincronizarTokko()" style="display:none">⟳ Sincronizar con Tokko</button>
+          <button onclick="openComNueva()" title="Solo para propiedades que no están en Tokko" style="background:#F3F4F6;color:#374151;border:1px solid #D1D5DB;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer">+ Carga manual</button>
         </div>
       </div>
       <div class="page-content">
@@ -703,6 +702,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
             <select class="filter" id="com-f-asesor" onchange="renderComercializacion()">
               <option value="">Todos los asesores</option>
               <option value="__mias__">Mis propiedades</option>
+              <option value="__sin__">Sin asesor asignado</option>
             </select>
           </div>
           <div class="table-wrap">
@@ -1752,9 +1752,11 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
     </div>
     <div class="modal-body">
       <input type="hidden" id="com-id" />
+      <div id="com-tokko" style="display:none;margin-bottom:16px"></div>
       <div id="com-desde-ficha-wrap" class="form-group full" style="margin-bottom:14px">
         <label>Cargar desde una captación del prelisting</label>
-        <select id="com-desde-ficha" onchange="comPrecargarFicha(this.value)"><option value="">— Carga manual —</option></select>
+        <select id="com-desde-ficha" onchange="comPrecargarFicha(this.value)"><option value="">— Ninguna, completar a mano —</option></select>
+        <div style="font-size:11.5px;color:#6B7280;margin-top:4px">Las propiedades publicadas en Tokko se cargan solas con la sincronización. Usá la carga manual solo para casos que no estén en Tokko.</div>
       </div>
       <div class="form-grid">
         <div class="form-group full"><label>Dirección *</label><input id="com-direccion" placeholder="Ej: Av. Pueyrredón 1035 6°A" /></div>
@@ -1768,7 +1770,11 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
         <div class="form-group"><label>Estado</label>
           <select id="com-estado"><option>Activa</option><option>Pausada</option><option>Reservada</option><option>Vendida</option><option>Retirada</option></select>
         </div>
-        <div class="form-group full"><label>Portales</label><div id="com-portales" class="com-chips"></div></div>
+        <div class="form-group full"><label>Portales</label>
+          <div style="font-size:13px;color:#374151"><span id="com-portales-resumen"></span>
+            <a href="#" id="com-portales-toggle" onclick="document.getElementById('com-portales').style.display='flex';this.style.display='none';return false" style="color:#2563EB;font-weight:600;font-size:12px;margin-left:6px">Modificar</a></div>
+          <div id="com-portales" class="com-chips" style="display:none;margin-top:6px"></div>
+        </div>
         <div class="form-group full"><label>Link del aviso</label><input id="com-link" placeholder="https://www.zonaprop.com.ar/..." /></div>
         <div class="form-group full"><label>Notas</label><textarea id="com-notas" rows="2"></textarea></div>
       </div>
@@ -7007,10 +7013,14 @@ async function loadComercializacion() {
   comData = rc.data || []
   visData = rv.data || []
   const selA = document.getElementById('com-f-asesor')
-  if (selA && selA.options.length <= 2) {
+  if (selA && !selA.dataset.init) {
+    selA.dataset.init = '1'
     asesoresList.filter(a => a.activo !== false).forEach(a => selA.insertAdjacentHTML('beforeend', `<option>${raEsc(a.nombre)}</option>`))
-    if (!window.isAdmin) selA.value = '__mias__'
+    if (!window.isAdmin) { selA.value = '__mias__'; selA.querySelector('option[value="__sin__"]')?.remove() }
   }
+  document.getElementById('com-btn-sync').style.display = window.isAdmin ? '' : 'none'
+  const ult = comData.map(c => c.sincronizado_at).filter(Boolean).sort().pop()
+  document.getElementById('com-sync-info').textContent = ult ? 'Tokko: ' + new Date(ult).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
   renderComercializacion()
   actualizarBadgeVisitas()
 }
@@ -7024,7 +7034,7 @@ function renderComercializacion() {
   const ahora = new Date()
   const lista = comData.filter(c =>
     (!est || c.estado === est) &&
-    (!as || (as === '__mias__' ? (c.asesor_email || '').toLowerCase() === _yo() || c.asesor === _miNombre() : c.asesor === as)) &&
+    (!as || (as === '__mias__' ? (c.asesor_email || '').toLowerCase() === _yo() || c.asesor === _miNombre() : as === '__sin__' ? !c.asesor : c.asesor === as)) &&
     (!q || [c.direccion, c.barrio, c.propietario, c.asesor].some(x => (x || '').toLowerCase().includes(q)))
   )
 
@@ -7064,8 +7074,8 @@ function renderComercializacion() {
     const dias = c.fecha_publicacion ? Math.max(0, Math.round((ahora - parseLocalDate(c.fecha_publicacion)) / 864e5)) : null
     const pendC = vs.filter(_pendienteDevolucion).length
     return `<tr>
-      <td style="font-weight:600;max-width:240px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raEsc(c.direccion)}</div><div style="font-size:11px;color:#9CA3AF;font-weight:400">${raEsc(c.barrio || '')}${c.propietario ? ' · ' + raEsc(c.propietario) : ''}</div></td>
-      <td>${raEsc(c.asesor || '—')}</td>
+      <td style="font-weight:600;max-width:260px"><div style="display:flex;gap:8px;align-items:center">${c.datos_tokko?.foto ? `<img src="${raEsc(c.datos_tokko.foto)}" alt="" loading="lazy" style="width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0">` : ''}<div style="min-width:0"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raEsc(c.direccion)}</div><div style="font-size:11px;color:#9CA3AF;font-weight:400">${raEsc(c.barrio || '')}${c.propietario ? ' · ' + raEsc(c.propietario) : ''}${c.tokko_ref ? ' · ' + raEsc(c.tokko_ref) : ''}</div></div></div></td>
+      <td>${c.asesor ? raEsc(c.asesor) : '<span style="color:#D97706;font-size:12px">Sin asignar</span>'}</td>
       <td>${c.precio ? raEsc(c.moneda) + ' ' + Number(c.precio).toLocaleString('es-AR') : '—'}</td>
       <td style="color:#6B7280">${dias === null ? '—' : dias + ' días'}</td>
       <td style="text-align:center"><strong>${realizadas}</strong><span style="color:#9CA3AF"> / ${vs.length}</span>${pendC ? ' <span title="Devoluciones pendientes" style="color:#D97706">⏰' + pendC + '</span>' : ''}</td>
@@ -7114,7 +7124,27 @@ function _setComForm(c) {
   document.getElementById('com-estado').value = c?.estado || 'Activa'
   document.getElementById('com-link').value = c?.link_aviso || ''
   document.getElementById('com-notas').value = c?.notas || ''
-  _chips('com-portales', COM_PORTALES, c?.portales || [])
+  const port = c ? (c.portales || []) : COM_PORTALES
+  _chips('com-portales', COM_PORTALES, port)
+  const todos = COM_PORTALES.every(x => port.includes(x))
+  document.getElementById('com-portales-resumen').innerHTML = todos ? '✓ Publicada en todos los portales'
+    : (port.length ? 'Publicada en: ' + port.map(raEsc).join(', ') : 'Sin publicar en portales')
+  document.getElementById('com-portales').style.display = 'none'
+  document.getElementById('com-portales-toggle').style.display = ''
+  // Datos que vienen de Tokko (solo lectura)
+  const tk = document.getElementById('com-tokko')
+  if (c?.tokko_id) {
+    const d = c.datos_tokko || {}
+    const ficha = [d.tipo, d.ambientes ? d.ambientes + ' amb.' : '', d.sup_total ? d.sup_total + ' m² totales' : '', d.sup_cubierta ? d.sup_cubierta + ' m² cub.' : '', d.expensas ? 'Expensas $' + Number(d.expensas).toLocaleString('es-AR') : ''].filter(Boolean).join(' · ')
+    tk.style.display = 'block'
+    tk.innerHTML = `<div style="display:flex;gap:12px;align-items:center;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:10px 12px">
+      ${d.foto ? `<img src="${raEsc(d.foto)}" alt="" style="width:72px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0">` : ''}
+      <div style="min-width:0;flex:1">
+        <div style="font-size:12px;font-weight:700;color:#0F1F3D">Tokko ${raEsc(c.tokko_ref || '')} ${c.tokko_url ? `· <a href="${raEsc(c.tokko_url)}" target="_blank" rel="noopener" style="color:#2563EB">Ver ficha</a>` : ''}</div>
+        <div style="font-size:12px;color:#4B5563;margin-top:2px">${raEsc(ficha)}</div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:2px">Dirección, precio y estado se actualizan desde Tokko${c.sincronizado_at ? ' · última vez ' + new Date(c.sincronizado_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</div>
+      </div></div>`
+  } else { tk.style.display = 'none'; tk.innerHTML = '' }
   const hist = (c?.historial_precios || [])
   document.getElementById('com-historial').innerHTML = hist.length > 1
     ? 'Historial de precio: ' + hist.map(h => `${formatDate(h.fecha)} ${raEsc(h.moneda || '')} ${Number(h.precio).toLocaleString('es-AR')}`).join(' → ')
@@ -7122,6 +7152,9 @@ function _setComForm(c) {
   const editable = !c || _puedeEditarCom(c)
   document.querySelectorAll('#modal-com .modal-body input, #modal-com .modal-body select, #modal-com .modal-body textarea').forEach(el => { if (el.id !== 'com-desde-ficha') el.disabled = !editable })
   document.querySelectorAll('#com-portales .com-chip').forEach(b => b.disabled = !editable)
+  document.getElementById('com-portales-toggle').style.display = editable ? '' : 'none'
+  // Los datos sincronizados con Tokko no se editan en el panel
+  if (c?.tokko_id) ['com-direccion', 'com-barrio', 'com-operacion', 'com-precio', 'com-moneda', 'com-estado'].forEach(id => document.getElementById(id).disabled = true)
   document.getElementById('com-asesor').disabled = !editable || !window.isAdmin
   document.getElementById('com-btn-guardar').style.display = editable ? '' : 'none'
   document.getElementById('com-btn-eliminar').style.display = (c && window.isAdmin) ? 'inline-flex' : 'none'
@@ -7178,6 +7211,7 @@ async function saveCom() {
     propietario: document.getElementById('com-propietario').value.trim() || null,
     asesor,
     asesor_email: _mailDe(asesor) || (id ? _comActual?.asesor_email : currentUser?.email),
+    asesor_manual: (_comActual?.asesor_manual) || (!!id && window.isAdmin && asesor !== (_comActual?.asesor || '')),
     precio, moneda,
     fecha_publicacion: document.getElementById('com-fecha-pub').value || null,
     estado: document.getElementById('com-estado').value,
@@ -7192,6 +7226,7 @@ async function saveCom() {
     hist.push({ fecha: dateKey(new Date()), precio, moneda })
   }
   row.historial_precios = hist
+  if (_comActual?.tokko_id) ['direccion', 'barrio', 'operacion', 'precio', 'moneda', 'estado', 'historial_precios'].forEach(k => delete row[k])
   if (!id) {
     const fichaId = document.getElementById('com-desde-ficha').value
     if (fichaId) row.ficha_id = String(fichaId)
@@ -7411,6 +7446,23 @@ function _agendarVisitaRow(v) {
   const stamp = s => s.replace(/[-:]/g, '') + '00'
   const params = new URLSearchParams({ action: 'TEMPLATE', text: titulo, dates: `${stamp(inicio)}/${stamp(fin)}`, ctz: 'America/Argentina/Buenos_Aires', details: descripcion, location: lugar })
   crearEventoGoogle({ titulo, inicio: inicio + ':00', fin: fin + ':00', lugar, descripcion }, 'https://calendar.google.com/calendar/render?' + params.toString())
+}
+
+// ── Sincronización con Tokko (admin) ────────────────────────────────
+async function sincronizarTokko() {
+  const btn = document.getElementById('com-btn-sync')
+  btn.disabled = true; btn.textContent = 'Sincronizando...'
+  try {
+    const res = await _callEdgeFn('tokko-sync', {})
+    const r = await res.json()
+    if (!res.ok || r.error) throw new Error(r.error || 'Error ' + res.status)
+    toast(`Tokko: ${r.tokko} propiedades · ${r.nuevas} nuevas · ${r.actualizadas} actualizadas${r.cambios_precio ? ' · ' + r.cambios_precio + ' cambios de precio' : ''}`)
+    await loadComercializacion()
+  } catch (e) {
+    toast('No se pudo sincronizar con Tokko: ' + e.message, true)
+  } finally {
+    btn.disabled = false; btn.textContent = '⟳ Sincronizar con Tokko'
+  }
 }
 
 // ── Captación → comercialización automática ─────────────────────────
