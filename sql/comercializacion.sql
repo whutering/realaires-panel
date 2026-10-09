@@ -186,7 +186,8 @@ as $$
     and (cardinality(b.barrios) = 0 or c.barrio is null or exists (
           select 1 from unnest(b.barrios) z
           where ra_norm(c.barrio) like '%' || ra_norm(z) || '%'
-             or ra_norm(z) like '%' || ra_norm(c.barrio) || '%'))
+             or ra_norm(z) like '%' || ra_norm(c.barrio) || '%'
+             or ra_norm(z) = any (select trim(ra_norm(x)) from unnest(string_to_array(coalesce(c.datos_tokko ->> 'ubicacion', ''), '|')) x)))
     and (p.amb is null or b.amb_min is null or p.amb >= b.amb_min)
     and (p.amb is null or b.amb_max is null or p.amb <= b.amb_max)
     and (p.dorm is null or b.dorm_min is null or p.dorm >= b.dorm_min)

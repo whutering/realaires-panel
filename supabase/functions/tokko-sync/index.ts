@@ -150,6 +150,7 @@ async function sincronizar(admin: any) {
           atributos: (p.tags || []).map((t: any) => typeof t === 'string' ? t : t?.name).filter(Boolean).slice(0, 30),
           foto: (p.photos || []).find((f: any) => f.is_front_cover)?.image || (p.photos || [])[0]?.image || null,
           lat: p.geo_lat || null, lng: p.geo_long || null,
+          ubicacion: p.location?.full_location ? limpia(p.location.full_location) : null,
         },
       }
       // El asesor se toma de Tokko salvo que un administrador lo haya asignado a mano en el panel
