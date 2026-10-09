@@ -19,7 +19,7 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
 
-const norm = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+const norm = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/\bavenida\b|\bav\b\.?/g, 'av').replace(/[°º"'.,;:#()\/\\-]/g, ' ').replace(/\s+/g, ' ').trim()
 const claveDir = (s: unknown) => norm(s).replace(/\s+/g, '')
 const limpia = (s: unknown) => String(s ?? '').replace(/\s+/g, ' ').trim()
