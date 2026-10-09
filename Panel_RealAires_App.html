@@ -7472,25 +7472,73 @@ async function _cargarConsultas() {
 
 function _consultasDe(comId) { return consData.filter(q => q.comercializacion_id === comId) }
 
+// Una misma persona suele contactar varias veces por la misma propiedad (ver WhatsApp, ver teléfono, mensaje).
+// Se identifica por correo, o por los últimos 8 dígitos del teléfono, o por el nombre.
+function _claveInteresado(q) {
+  const mail = (q.interesado_email || '').trim().toLowerCase()
+  if (mail) return 'm:' + mail
+  const tel = String(q.interesado_tel || '').replace(/\D/g, '').slice(-8)
+  if (tel.length >= 6) return 't:' + tel
+  const nom = (q.interesado || '').trim().toLowerCase()
+  return nom && nom !== 'interesado' ? 'n:' + nom : 'id:' + q.id
+}
+
+// Agrupa consultas por propiedad e interesado. Cada grupo: { clave, items (más reciente primero), ultima, estado, ... }
+function _agruparConsultas(lista) {
+  const grupos = new Map()
+  lista.forEach(q => {
+    const k = (q.comercializacion_id || '') + '|' + _claveInteresado(q)
+    if (!grupos.has(k)) grupos.set(k, [])
+    grupos.get(k).push(q)
+  })
+  return [...grupos.values()].map(items => {
+    items.sort((a, b) => new Date(b.recibida_at) - new Date(a.recibida_at))
+    const u = items[0]
+    const dato = campo => items.map(x => x[campo]).find(Boolean) || null
+    return {
+      items, ultima: u, id: u.id, ids: items.map(x => x.id),
+      comercializacion_id: u.comercializacion_id, recibida_at: u.recibida_at,
+      estado: items.some(x => x.estado === 'Nueva') ? 'Nueva' : u.estado,
+      interesado: items.map(x => x.interesado).find(n => n && n.toLowerCase() !== 'interesado') || null,
+      interesado_tel: dato('interesado_tel'), interesado_email: dato('interesado_email'),
+      aviso_url: dato('aviso_url'),
+      portales: [...new Set(items.map(x => x.portal).filter(Boolean))],
+      portal: u.portal,
+    }
+  }).sort((a, b) => new Date(b.recibida_at) - new Date(a.recibida_at))
+}
+
+function _nombreInteresado(g) { return g.interesado || g.interesado_email || g.interesado_tel || 'Interesado' }
+
 function _consultasSinContactar(soloPropias) {
   const limite = Date.now() - CONS_HORAS_ALERTA * 3600 * 1000
-  return consData.filter(q => q.estado === 'Nueva' && new Date(q.recibida_at).getTime() < limite && q.comercializacion_id)
+  const base = consData.filter(q => q.comercializacion_id)
     .filter(q => { if (!soloPropias) return true; const c = comData.find(x => x.id === q.comercializacion_id); return c && (c.asesor_email || '').toLowerCase() === _yo() })
+  // Una persona cuenta una sola vez: pendiente si tiene algún contacto nuevo y el primero sin atender superó el plazo
+  return _agruparConsultas(base).filter(g => g.estado === 'Nueva'
+    && Math.min(...g.items.filter(x => x.estado === 'Nueva').map(x => new Date(x.recibida_at).getTime())) < limite)
 }
 
 function _consultasCelda(c) {
   const mias = _consultasDe(c.id)
   const r = consResumen[c.id] || (mias.length ? { total: mias.length } : null)
   if (!r || !r.total) return '<span style="color:#9CA3AF">0</span>'
-  const nuevas = mias.length ? mias.filter(q => q.estado === 'Nueva').length : 0
-  return `<strong>${r.total}</strong>${nuevas ? ` <span title="Sin contactar" style="background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:0 6px;font-size:10.5px;font-weight:700">${nuevas} nueva${nuevas > 1 ? 's' : ''}</span>` : ''}`
+  const grupos = mias.length ? _agruparConsultas(mias) : []
+  const nuevas = grupos.filter(g => g.estado === 'Nueva').length
+  const personas = grupos.length && grupos.length < r.total ? ` <span title="Interesados distintos" style="color:#6B7280;font-size:11px">(${grupos.length} pers.)</span>` : ''
+  return `<strong>${r.total}</strong>${personas}${nuevas ? ` <span title="Sin contactar" style="background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:0 6px;font-size:10.5px;font-weight:700">${nuevas} nueva${nuevas > 1 ? 's' : ''}</span>` : ''}`
 }
 
 function _consultasPorCanal(c, desdeStr) {
   const desde = desdeStr ? parseLocalDate(desdeStr) : (c.fecha_publicacion ? parseLocalDate(c.fecha_publicacion) : null)
   const out = {}
+  // Cada interesado cuenta una vez por canal, aunque haya consultado varias veces
+  const vistos = new Set()
   _consultasDe(c.id).filter(q => !desde || new Date(q.recibida_at) >= desde).forEach(q => {
     const k = INF_CANALES.includes(q.portal) ? q.portal : 'Otros'
+    const id = k + '|' + _claveInteresado(q)
+    if (vistos.has(id)) return
+    vistos.add(id)
     out[k] = (out[k] || 0) + 1
   })
   return out
@@ -7505,53 +7553,73 @@ function renderConsultasCom() {
   const puede = _puedeEditarCom(c)
   if (!total && !lista.length) { wrap.style.display = 'none'; return }
   wrap.style.display = 'block'
-  document.getElementById('com-consultas-count').textContent = `(${total || lista.length})`
+  const grupos = _agruparConsultas(lista)
+  document.getElementById('com-consultas-count').textContent = grupos.length && grupos.length !== total
+    ? `(${grupos.length} interesado${grupos.length !== 1 ? 's' : ''}, ${total} contactos)` : `(${total})`
   const porCanal = {}
-  lista.forEach(q => { const k = q.portal || 'Sin portal'; porCanal[k] = (porCanal[k] || 0) + 1 })
+  grupos.forEach(g => g.portales.forEach(k => { porCanal[k] = (porCanal[k] || 0) + 1 }))
+  if (!grupos.length) lista.forEach(q => { const k = q.portal || 'Sin portal'; porCanal[k] = (porCanal[k] || 0) + 1 })
   document.getElementById('com-cons-canales').innerHTML = Object.entries(porCanal).sort((a, b) => b[1] - a[1])
     .map(([k, n]) => `<span style="background:#F3F4F6;border-radius:12px;padding:3px 10px;font-size:11.5px;color:#374151">${raEsc(k)}: <strong>${n}</strong></span>`).join('')
   const el = document.getElementById('com-consultas-list')
   document.getElementById('com-cons-filtro').style.display = puede ? '' : 'none'
   if (!puede) { el.innerHTML = `<div style="font-size:12.5px;color:#6B7280">Esta propiedad recibió ${total} consulta${total !== 1 ? 's' : ''}. El detalle lo gestiona ${raEsc(c.asesor || 'el asesor responsable')}.</div>`; return }
   const filtro = document.getElementById('com-cons-filtro').value
-  const vis = lista.filter(q => !filtro || q.estado === filtro)
+  const vis = grupos.filter(g => !filtro || g.estado === filtro)
   if (!vis.length) { el.innerHTML = '<div style="font-size:12px;color:#9CA3AF">No hay consultas con este filtro.</div>'; return }
-  el.innerHTML = vis.slice(0, 50).map(q => {
-    const tarde = q.estado === 'Nueva' && Date.now() - new Date(q.recibida_at) > CONS_HORAS_ALERTA * 3600 * 1000
-    const wa = q.interesado_tel ? `https://wa.me/${String(q.interesado_tel).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${q.interesado || ''}, soy ${_miNombre()} de Real Aires. Te escribo por tu consulta sobre ${c.direccion}.`)}` : null
+  el.innerHTML = vis.slice(0, 50).map(g => {
+    const tarde = g.estado === 'Nueva' && g.items.some(x => x.estado === 'Nueva' && Date.now() - new Date(x.recibida_at) > CONS_HORAS_ALERTA * 3600 * 1000)
+    const nombre = _nombreInteresado(g)
+    const saludo = g.interesado ? ' ' + g.interesado : ''
+    const wa = g.interesado_tel ? `https://wa.me/${String(g.interesado_tel).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola${saludo}, soy ${_miNombre()} de Real Aires. Te escribo por tu consulta sobre ${c.direccion}.`)}` : null
+    const n = g.items.length
+    const mensajes = [...new Set(g.items.map(x => (x.mensaje || '').trim()).filter(Boolean))]
+    const historial = n > 1 ? `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:11.5px;color:#6B7280">Ver los ${n} contactos</summary>
+        <div style="margin-top:4px;border-left:2px solid #E5E7EB;padding-left:8px">${g.items.map(x => `<div style="font-size:11.5px;color:#4B5563;padding:2px 0">${_fechaHora(x.recibida_at)} · ${raEsc(x.portal || 'Sin portal')}${x.mensaje ? ' · ' + raEsc(x.mensaje.replace(/\s+/g, ' ').slice(0, 120)) : ''}</div>`).join('')}</div></details>` : ''
     return `<div style="border:1px solid ${tarde ? '#FECACA' : '#E5E7EB'};background:${tarde ? '#FEF2F2' : '#fff'};border-radius:10px;padding:9px 12px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
         <div>
-          <div style="font-weight:700;font-size:13px;color:#0F1F3D">${raEsc(q.interesado || 'Interesado')} <span style="font-weight:400;color:#6B7280;font-size:11.5px">· ${_fechaHora(q.recibida_at)} · ${raEsc(q.portal || 'Sin portal')}</span></div>
-          <div style="font-size:11.5px;color:#4B5563;margin-top:2px">${q.interesado_tel ? raEsc(q.interesado_tel) : ''}${q.interesado_email ? ' · ' + raEsc(q.interesado_email) : ''}</div>
+          <div style="font-weight:700;font-size:13px;color:#0F1F3D">${raEsc(nombre)}${n > 1 ? ` <span style="background:#EEF2FF;color:#4338CA;border-radius:8px;padding:0 7px;font-size:10.5px;font-weight:700">${n} contactos</span>` : ''} <span style="font-weight:400;color:#6B7280;font-size:11.5px">· último ${_fechaHora(g.recibida_at)} · ${raEsc(g.portales.join(', ') || 'Sin portal')}</span></div>
+          <div style="font-size:11.5px;color:#4B5563;margin-top:2px">${[g.interesado_tel, g.interesado_email].filter(Boolean).map(raEsc).join(' · ')}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          ${wa ? `<a class="action-btn" style="text-decoration:none;border-color:#86EFAC;color:#15803D" href="${wa}" target="_blank" onclick="marcarConsulta('${q.id}','Contactada', true)">WhatsApp</a>` : ''}
-          ${q.aviso_url ? `<a class="action-btn" style="text-decoration:none" href="${raEsc(q.aviso_url)}" target="_blank">Aviso ↗</a>` : ''}
-          <button class="action-btn" style="border-color:#93C5FD;color:#1D4ED8" onclick="agendarDesdeConsulta('${q.id}')">Agendar visita</button>
-          <select class="bq-mini-select" onchange="marcarConsulta('${q.id}', this.value)">${['Nueva', 'Contactada', 'Visita agendada', 'Descartada'].map(e => `<option ${e === q.estado ? 'selected' : ''}>${e}</option>`).join('')}</select>
+          ${wa ? `<a class="action-btn" style="text-decoration:none;border-color:#86EFAC;color:#15803D" href="${wa}" target="_blank" onclick="marcarConsulta('${g.id}','Contactada', true)">WhatsApp</a>` : ''}
+          ${g.aviso_url ? `<a class="action-btn" style="text-decoration:none" href="${raEsc(g.aviso_url)}" target="_blank">Aviso ↗</a>` : ''}
+          <button class="action-btn" style="border-color:#93C5FD;color:#1D4ED8" onclick="agendarDesdeConsulta('${g.id}')">Agendar visita</button>
+          <select class="bq-mini-select" onchange="marcarConsulta('${g.id}', this.value)">${['Nueva', 'Contactada', 'Visita agendada', 'Descartada'].map(e => `<option ${e === g.estado ? 'selected' : ''}>${e}</option>`).join('')}</select>
         </div>
       </div>
-      ${q.mensaje ? `<div style="font-size:12px;color:#374151;margin-top:6px;white-space:pre-wrap">${raEsc(q.mensaje)}</div>` : ''}
+      ${mensajes.length ? `<div style="font-size:12px;color:#374151;margin-top:6px;white-space:pre-wrap">${raEsc(mensajes.join('\n\n'))}</div>` : ''}
+      ${historial}
     </div>`
-  }).join('') + (vis.length > 50 ? `<div style="font-size:11.5px;color:#9CA3AF">Se muestran las 50 más recientes de ${vis.length}.</div>` : '')
+  }).join('') + (vis.length > 50 ? `<div style="font-size:11.5px;color:#9CA3AF">Se muestran los 50 interesados más recientes de ${vis.length}.</div>` : '')
+}
+
+// Devuelve todas las consultas del mismo interesado en la misma propiedad
+function _grupoDeConsulta(id) {
+  const q = consData.find(x => x.id === id)
+  if (!q) return []
+  const k = _claveInteresado(q)
+  return consData.filter(x => x.comercializacion_id === q.comercializacion_id && _claveInteresado(x) === k)
 }
 
 async function marcarConsulta(id, estado, silencioso) {
-  const q = consData.find(x => x.id === id)
-  if (!q || (silencioso && q.estado !== 'Nueva')) return
+  const grupo = _grupoDeConsulta(id)
+  if (!grupo.length || (silencioso && !grupo.some(x => x.estado === 'Nueva'))) return
   const row = { estado, updated_at: new Date().toISOString() }
-  if (estado !== 'Nueva' && !q.contactada_at) row.contactada_at = new Date().toISOString()
-  const { error } = await sb.from('consultas').update(row).eq('id', id)
+  if (estado !== 'Nueva') row.contactada_at = grupo.map(x => x.contactada_at).find(Boolean) || new Date().toISOString()
+  const { error } = await sb.from('consultas').update(row).in('id', grupo.map(x => x.id))
   if (error) { toast('No se pudo actualizar: ' + error.message, true); return }
-  Object.assign(q, row)
+  grupo.forEach(q => Object.assign(q, row))
   registrarLog('consulta_' + estado.toLowerCase().replace(/ /g, '_'), 'consultas', id, { propiedad: _comActual?.direccion })
   renderConsultasCom(); renderComercializacion(); actualizarBadgeVisitas()
 }
 
 function agendarDesdeConsulta(id) {
-  const q = consData.find(x => x.id === id)
-  if (q) openVisita(null, q)
+  const grupo = _grupoDeConsulta(id)
+  if (!grupo.length) return
+  const g = _agruparConsultas(grupo)[0]
+  openVisita(null, { ...g.ultima, interesado: g.interesado || g.ultima.interesado, interesado_tel: g.interesado_tel, interesado_email: g.interesado_email })
 }
 
 // ── Cruce con búsquedas activas (compradores que encajan) ───────────
@@ -7641,7 +7709,7 @@ function renderPendientes() {
   let html = ''
   if (_pendTipo === 'cons') html = p.cons.map(q => {
     const c = comData.find(x => x.id === q.comercializacion_id)
-    return fila(`${_fechaHora(q.recibida_at)} · <strong>${raEsc(c?.direccion || q.propiedad_texto || 'Propiedad')}</strong> · ${raEsc(q.portal || '')} · ${raEsc(q.interesado || '')}${asesorDe(c)}`,
+    return fila(`${_fechaHora(q.recibida_at)} · <strong>${raEsc(c?.direccion || q.propiedad_texto || 'Propiedad')}</strong> · ${raEsc(q.portales.join(', '))} · ${raEsc(_nombreInteresado(q))}${q.items.length > 1 ? ` (${q.items.length} contactos)` : ''}${asesorDe(c)}`,
       `<button class="action-btn" onclick="_pendIr(() => openComDetalle('${q.comercializacion_id}'))">Ver</button>`)
   }).join('')
   if (_pendTipo === 'inf') html = p.inf.map(({ c, a }) => {
@@ -8017,7 +8085,8 @@ async function saveVisita() {
   if (res.error) { toast('No se pudo guardar la visita: ' + res.error.message, true); return }
   registrarLog(id ? 'actualizar_visita' : 'crear_visita', 'visitas', res.data.id, { propiedad: _comActual.direccion, estado })
   if (!id && window._visDesdeConsulta) {
-    await sb.from('consultas').update({ estado: 'Visita agendada', visita_id: res.data.id, updated_at: new Date().toISOString(), contactada_at: new Date().toISOString() }).eq('id', window._visDesdeConsulta)
+    const ids = _grupoDeConsulta(window._visDesdeConsulta).map(x => x.id)
+    await sb.from('consultas').update({ estado: 'Visita agendada', visita_id: res.data.id, updated_at: new Date().toISOString(), contactada_at: new Date().toISOString() }).in('id', ids.length ? ids : [window._visDesdeConsulta])
     window._visDesdeConsulta = null
   }
   closeModal('visita')
