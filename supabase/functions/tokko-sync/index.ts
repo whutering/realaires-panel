@@ -48,6 +48,8 @@ async function traerTokko() {
   return todas
 }
 
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void }
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   const admin = createClient(SB_URL, SRV_KEY)
@@ -62,16 +64,29 @@ Deno.serve(async (req) => {
     if (!esAdmin) return json({ error: 'Solo administradores' }, 403)
   }
 
+  // Llamado del Cron: responde enseguida y sincroniza en segundo plano
+  if (token === SRV_KEY) {
+    EdgeRuntime.waitUntil(sincronizar(admin).catch(e => console.error('tokko-sync', e)))
+    return json({ ok: true, en_curso: true }, 202)
+  }
   try {
+    return json(await sincronizar(admin))
+  } catch (e) {
+    console.error(e)
+    return json({ error: String((e as Error).message || e) }, 500)
+  }
+})
+
+async function sincronizar(admin: any) {
     const [props, { data: existentes }, { data: asesores }] = await Promise.all([
       traerTokko(),
       admin.from('comercializaciones').select('id, tokko_id, tokko_hash, direccion, precio, moneda, historial_precios, estado, asesor, asesor_email, asesor_manual, fecha_publicacion, propietario, portales'),
       admin.from('asesores').select('nombre, mail, activo'),
     ])
-    const porTokko = new Map((existentes || []).filter(c => c.tokko_id).map(c => [Number(c.tokko_id), c]))
-    const porDir   = new Map((existentes || []).filter(c => !c.tokko_id).map(c => [claveDir(c.direccion), c]))
-    const asesorPorNombre = new Map((asesores || []).map(a => [norm(a.nombre), a]))
-    const asesorPorMail   = new Map((asesores || []).filter(a => a.mail).map(a => [a.mail.toLowerCase(), a]))
+    const porTokko = new Map<number, any>((existentes || []).filter((c: any) => c.tokko_id).map((c: any) => [Number(c.tokko_id), c]))
+    const porDir   = new Map<string, any>((existentes || []).filter((c: any) => !c.tokko_id).map((c: any) => [claveDir(c.direccion), c]))
+    const asesorPorNombre = new Map<string, any>((asesores || []).map((a: any) => [norm(a.nombre), a]))
+    const asesorPorMail   = new Map<string, any>((asesores || []).filter((a: any) => a.mail).map((a: any) => [a.mail.toLowerCase(), a]))
 
     const resumen = { tokko: props.length, nuevas: 0, actualizadas: 0, sin_cambios: 0, vinculadas: 0, cambios_precio: 0, errores: [] as string[] }
     const filas: any[] = []
@@ -163,9 +178,5 @@ Deno.serve(async (req) => {
     if (resumen.nuevas || resumen.actualizadas || resumen.errores.length) {
       await admin.from('logs').insert({ usuario: 'tokko-sync', accion: 'sincronizar_tokko', entidad: 'comercializaciones', detalle: resumen })
     }
-    return json({ ok: resumen.errores.length === 0, ...resumen })
-  } catch (e) {
-    console.error(e)
-    return json({ error: String((e as Error).message || e) }, 500)
-  }
-})
+    return { ok: resumen.errores.length === 0, ...resumen }
+}
