@@ -872,6 +872,14 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
         <div id="bq-detail-view" style="display:none">
           <div class="bq-detail-head" id="bq-detail-head"></div>
 
+          <div class="table-card" style="margin-bottom:1rem;border:1.5px solid #C9A24E">
+            <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>🏠 Propiedades de Real Aires que encajan</span>
+              <span style="font-size:11px;font-weight:500;color:#9CA3AF">Inventario propio en comercialización, ordenado por afinidad</span>
+            </div>
+            <div id="bq-internas"></div>
+          </div>
+
           <div class="table-card" style="margin-bottom:1rem">
             <div class="table-toolbar">
               <button class="btn-add" onclick="bqPegarDesdeExtension()">📋 Pegar desde extensión</button>
@@ -1842,6 +1850,7 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
     <div class="modal-body">
       <input type="hidden" id="com-id" />
       <div id="com-tokko" style="display:none;margin-bottom:16px"></div>
+      <div id="com-compradores" style="display:none;margin-bottom:16px;background:#F4F1EA;border:1px solid #E6DDC8;border-radius:10px;padding:10px 14px"></div>
       <div id="com-desde-ficha-wrap" class="form-group full" style="margin-bottom:14px">
         <label>Cargar desde una captación del prelisting</label>
         <select id="com-desde-ficha" onchange="comPrecargarFicha(this.value)"><option value="">— Ninguna, completar a mano —</option></select>
@@ -7197,6 +7206,7 @@ const COM_ESTADO_COLOR = { Activa: ['#DCFCE7', '#15803D'], Pausada: ['#F3F4F6', 
 const VIS_ESTADO_COLOR = { Agendada: ['#DBEAFE', '#1D4ED8'], Realizada: ['#DCFCE7', '#15803D'], Cancelada: ['#F3F4F6', '#6B7280'], 'No se presentó': ['#FEE2E2', '#B91C1C'] }
 
 let comData = []      // propiedades
+let comCruce = {}     // comercializacion_id → búsquedas activas que encajan
 let visData = []      // visitas visibles para el usuario
 let _comActual = null // propiedad abierta en el modal
 let _comFichasCaptadas = []
@@ -7240,6 +7250,7 @@ async function loadComercializacion() {
   }
   comData = rc.data || []
   visData = rv.data || []
+  _cargarCruceCom()
   const selA = document.getElementById('com-f-asesor')
   if (selA && !selA.dataset.init) {
     selA.dataset.init = '1'
@@ -7316,7 +7327,7 @@ function renderComercializacion() {
     const dias = c.fecha_publicacion ? Math.max(0, Math.round((ahora - parseLocalDate(c.fecha_publicacion)) / 864e5)) : null
     const pendC = vs.filter(_pendienteDevolucion).length
     return `<tr>
-      <td style="font-weight:600;max-width:260px"><div style="display:flex;gap:8px;align-items:center">${c.datos_tokko?.foto ? `<img src="${raEsc(c.datos_tokko.foto)}" alt="" loading="lazy" style="width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0">` : ''}<div style="min-width:0"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raEsc(c.direccion)}</div><div style="font-size:11px;color:#9CA3AF;font-weight:400">${raEsc(c.barrio || '')}${c.propietario ? ' · ' + raEsc(c.propietario) : ''}${c.tokko_ref ? ' · ' + raEsc(c.tokko_ref) : ''}</div></div></div></td>
+      <td style="font-weight:600;max-width:260px"><div style="display:flex;gap:8px;align-items:center">${c.datos_tokko?.foto ? `<img src="${raEsc(c.datos_tokko.foto)}" alt="" loading="lazy" style="width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0">` : ''}<div style="min-width:0"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${raEsc(c.direccion)}</div><div style="font-size:11px;color:#9CA3AF;font-weight:400">${raEsc(c.barrio || '')}${c.propietario ? ' · ' + raEsc(c.propietario) : ''}${c.tokko_ref ? ' · ' + raEsc(c.tokko_ref) : ''}</div>${(comCruce[c.id] || []).length ? `<div style="margin-top:2px"><span title="Búsquedas activas que encajan" style="font-size:10.5px;font-weight:700;color:#7E6122;background:#F4F1EA;border-radius:8px;padding:1px 7px">⚡ ${comCruce[c.id].length} comprador${comCruce[c.id].length > 1 ? 'es' : ''}</span></div>` : ''}</div></div></td>
       <td>${c.asesor ? raEsc(c.asesor) : '<span style="color:#D97706;font-size:12px">Sin asignar</span>'}</td>
       <td>${c.precio ? raEsc(c.moneda) + ' ' + Number(c.precio).toLocaleString('es-AR') : '—'}</td>
       <td style="min-width:150px">${_autzMini(c)}</td>
@@ -7415,6 +7426,41 @@ async function marcarInformeEnviado(n, deshacer) {
   renderAutzCom(); renderComercializacion(); actualizarBadgeVisitas()
 }
 
+// ── Cruce con búsquedas activas (compradores que encajan) ───────────
+async function _cargarCruceCom() {
+  const ids = comData.filter(c => c.estado === 'Activa').map(c => c.id)
+  comCruce = {}
+  if (!ids.length) return
+  const { data, error } = await sb.rpc('ra_cruce_comercializaciones', { p_ids: ids })
+  if (error) return
+  ;(data || []).forEach(r => { (comCruce[r.comercializacion_id] = comCruce[r.comercializacion_id] || []).push(r) })
+  renderComercializacion()
+  if (_comActual && document.getElementById('modal-com').classList.contains('open')) _renderCompradoresCom()
+}
+
+function _renderCompradoresCom() {
+  const el = document.getElementById('com-compradores')
+  if (!el || !_comActual) return
+  const lista = comCruce[_comActual.id] || []
+  if (!lista.length || _comActual.estado !== 'Activa') { el.style.display = 'none'; return }
+  const propias = lista.filter(r => r.es_propia)
+  const otras = {}
+  lista.filter(r => !r.es_propia).forEach(r => { const k = r.asesor || 'Otro asesor'; otras[k] = (otras[k] || 0) + 1 })
+  el.style.display = 'block'
+  el.innerHTML = `<div style="font-size:13px;font-weight:700;color:#0F1F3D;margin-bottom:6px">⚡ ${lista.length} búsqueda${lista.length > 1 ? 's' : ''} activa${lista.length > 1 ? 's' : ''} encaja${lista.length > 1 ? 'n' : ''} con esta propiedad</div>
+    ${propias.map(r => `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12.5px">
+      <span><strong>${raEsc(r.cliente || 'Cliente')}</strong>${r.asesor ? ' · ' + raEsc(r.asesor) : ''}</span>
+      <button class="action-btn" onclick="irABusqueda('${r.busqueda_id}')">Abrir búsqueda</button></div>`).join('')}
+    ${Object.entries(otras).map(([a, n]) => `<div style="padding:4px 0;font-size:12.5px;color:#4B5563">${n} búsqueda${n > 1 ? 's' : ''} de <strong>${raEsc(a)}</strong> · coordiná con el asesor</div>`).join('')}`
+}
+
+async function irABusqueda(id) {
+  closeModal('com')
+  showPage('busquedas')
+  for (let i = 0; i < 40 && !(typeof bqData !== 'undefined' && bqData.some(x => x.id === id)); i++) await new Promise(r => setTimeout(r, 150))
+  bqAbrir(id)
+}
+
 // ── Badge del menú (devoluciones pendientes propias) ────────────────
 async function actualizarBadgeVisitas() {
   const badge = document.getElementById('com-nav-badge')
@@ -7504,6 +7550,7 @@ async function openComNueva() {
   document.getElementById('com-m-title').textContent = 'Nueva propiedad en comercialización'
   document.getElementById('com-m-sub').textContent = ''
   document.getElementById('com-visitas-wrap').style.display = 'none'
+  document.getElementById('com-compradores').style.display = 'none'
   document.getElementById('com-informes').style.display = 'none'
   document.getElementById('com-desde-ficha-wrap').style.display = ''
   // Captaciones del prelisting que todavía no están en comercialización
@@ -7605,6 +7652,7 @@ function openComDetalle(id) {
   const dias = c.fecha_publicacion ? Math.round((new Date() - parseLocalDate(c.fecha_publicacion)) / 864e5) : null
   document.getElementById('com-m-sub').textContent = [c.asesor, c.operacion, dias !== null ? `publicada hace ${dias} días` : null].filter(Boolean).join(' · ')
   document.getElementById('com-visitas-wrap').style.display = 'block'
+  _renderCompradoresCom()
   document.getElementById('com-informes').style.display = _puedeEditarCom(c) ? 'block' : 'none'
   if (_puedeEditarCom(c)) _renderInformesCom()
   renderVisitasCom()
@@ -8716,6 +8764,7 @@ async function bqAbrir(id) {
   bqRenderHead()
   document.getElementById('bq-props-tbody').innerHTML = '<tr><td colspan="11" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>'
   document.getElementById('bq-sugeridas').innerHTML = ''
+  document.getElementById('bq-internas').innerHTML = '<div class="table-empty" style="padding:1rem">Buscando en el inventario...</div>'
   window.scrollTo(0, 0)
   await bqCargarProps()
 }
@@ -8780,6 +8829,7 @@ async function bqCargarProps() {
   bqProps = (data || []).filter(x => x.propiedad)
   bqRenderProps()
   bqCargarCruce()
+  bqCargarInternas()
   bqCargarSugeridas()
 }
 
@@ -8837,7 +8887,7 @@ function bqRenderProps() {
     return `<tr class="${x.etapa === 'Descartada' ? 'bq-descartada' : ''}">
       <td style="min-width:200px">
         <div class="bq-cliente" style="font-size:12.5px">${bqEsc(dir)}</div>
-        <div class="bq-sub">${bqEsc(p.barrio || '')}${p.barrio ? ' · ' : ''}${p.tipo ? bqEsc(p.tipo) + ' · ' : ''}${p.portal ? `<span class="bq-portal">${bqEsc(p.portal)}</span> ` : ''}${p.link ? `<a href="${bqEsc(p.link)}" target="_blank" style="color:#0A0A0A;font-weight:600">Ver aviso ↗</a>` : ''}</div>
+        <div class="bq-sub">${p.datos?.propia ? '<span style="background:#1C1C1C;color:#C9A24E;border-radius:8px;padding:1px 7px;font-size:10px;font-weight:700;margin-right:4px">PROPIA</span>' : ''}${bqEsc(p.barrio || '')}${p.barrio ? ' · ' : ''}${p.tipo ? bqEsc(p.tipo) + ' · ' : ''}${p.portal ? `<span class="bq-portal">${bqEsc(p.portal)}</span> ` : ''}${p.link ? `<a href="${bqEsc(p.link)}" target="_blank" style="color:#0A0A0A;font-weight:600">Ver aviso ↗</a>` : ''}</div>
         <div style="display:flex;gap:4px;margin-top:5px"><button class="action-btn" style="font-size:10.5px;padding:2px 8px" onclick="bqAbrirModalProp('${x.id}')">Editar</button><button class="action-btn del" style="font-size:10.5px;padding:2px 8px" title="Quitar de esta búsqueda" onclick="bqQuitarVinculo('${x.id}')">Quitar</button></div>
         ${cruce.length ? `<div style="margin-top:4px"><span class="bq-cruce" title="También encaja con: ${bqEsc(cruceTxt)}">⚡ Encaja con ${cruce.length} búsqueda${cruce.length > 1 ? 's' : ''} más</span></div>` : ''}
       </td>
@@ -8909,6 +8959,88 @@ async function bqCargarSugeridas() {
       ${p.link ? `<a class="bq-link-btn" href="${bqEsc(p.link)}" target="_blank">Ver aviso ↗</a>` : ''}
       <button class="btn-sm" onclick="bqVincular('${p.id}')">Agregar</button>
     </div>`).join('')
+}
+
+// ── Propiedades propias (Comercialización) que encajan ─────────────
+function _comComoProp(c) {
+  const d = c.datos_tokko || {}
+  return { operacion: c.operacion, tipo: d.tipo || null, barrio: c.barrio, amb: d.ambientes ?? null, dorm: d.dormitorios ?? null,
+           sup_cub: d.sup_cubierta ?? null, sup_tot: d.sup_total ?? null, precio: c.precio, moneda: c.moneda }
+}
+let _bqInternas = []
+
+async function bqCargarInternas() {
+  const cont = document.getElementById('bq-internas')
+  if (!cont || !bqActual) return
+  if (bqActual.estado !== 'Activa') { cont.innerHTML = '<div class="table-empty" style="padding:1rem">Las sugerencias se muestran solo en búsquedas activas.</div>'; return }
+  let props = (typeof comData !== 'undefined' && comData.length) ? comData : null
+  if (!props) {
+    const { data, error } = await sb.from('comercializaciones').select('*').eq('estado', 'Activa')
+    if (error) { cont.innerHTML = '<div class="table-empty" style="padding:1rem">No se pudo consultar el inventario.</div>'; return }
+    props = data || []
+  }
+  if (!bqActual) return
+  const ya = new Set(bqProps.map(x => x.propiedad?.datos?.comercializacion_id).filter(Boolean))
+  const b = bqActual
+  const objetivo = b.precio_max || b.precio_min || null
+  _bqInternas = props.filter(c => c.estado === 'Activa' && !ya.has(c.id) && bqEncaja(b, _comComoProp(c)))
+    .map(c => {
+      // Afinidad: barrio exacto, precio dentro del rango y cercano al presupuesto
+      let score = 0
+      if ((b.barrios || []).some(z => bqNorm(z) === bqNorm(c.barrio))) score += 3
+      if (c.precio && objetivo && c.moneda === b.moneda) {
+        if ((!b.precio_max || c.precio <= b.precio_max) && (!b.precio_min || c.precio >= b.precio_min)) score += 2
+        score -= Math.abs(c.precio - objetivo) / objetivo
+      }
+      if ((b.tipos || []).includes(c.datos_tokko?.tipo)) score += 1
+      return { c, score }
+    }).sort((x, y) => y.score - x.score).map(x => x.c)
+  if (!_bqInternas.length) {
+    cont.innerHTML = '<div class="table-empty" style="padding:1rem">Hoy ninguna propiedad propia en comercialización encaja con esta búsqueda.</div>'
+    return
+  }
+  cont.innerHTML = _bqInternas.slice(0, 12).map(c => {
+    const d = c.datos_tokko || {}
+    const sup = d.sup_cubierta || d.sup_total
+    const fueraRango = c.precio && b.precio_max && c.moneda === b.moneda && c.precio > b.precio_max
+    return `<div class="bq-sug-item">
+      ${d.foto ? `<img src="${bqEsc(d.foto)}" alt="" loading="lazy" style="width:56px;height:44px;border-radius:6px;object-fit:cover;flex-shrink:0">` : ''}
+      <div class="bq-sug-main">
+        <div class="bq-sug-title">${bqEsc(c.direccion)}${c.barrio ? ' · ' + bqEsc(c.barrio) : ''}</div>
+        <div class="bq-sub">${bqMoney(c.precio, c.moneda)}${fueraRango ? ' <span style="color:#D97706">(hasta 10% sobre el presupuesto)</span>' : ''} · ${d.ambientes ?? '—'} amb.${sup ? ' · ' + sup + ' m²' : ''}${d.tipo ? ' · ' + bqEsc(d.tipo) : ''} · Responsable: ${bqEsc(c.asesor || 'sin asignar')}</div>
+      </div>
+      ${c.tokko_url ? `<a class="bq-link-btn" href="${bqEsc(c.tokko_url)}" target="_blank">Ficha ↗</a>` : ''}
+      <button class="btn-sm" onclick="bqAgregarInterna('${c.id}')">Agregar</button>
+    </div>`
+  }).join('') + (_bqInternas.length > 12 ? `<div class="bq-sub" style="padding:8px 14px">y ${_bqInternas.length - 12} más que también encajan</div>` : '')
+}
+
+async function bqAgregarInterna(comId) {
+  const c = _bqInternas.find(x => x.id === comId)
+  if (!c || !bqActual) return
+  const d = c.datos_tokko || {}
+  const asesor = (asesoresList || []).find(a => a.nombre === c.asesor)
+  try {
+    // Reutiliza la ficha si la propiedad ya fue agregada a otra búsqueda
+    let propId = null
+    const { data: ex } = await sb.from('propiedades_relevadas').select('id').eq('datos->>comercializacion_id', c.id).limit(1)
+    if (ex && ex[0]) propId = ex[0].id
+    if (!propId) {
+      propId = await bqUpsertPropiedad({
+        link: c.tokko_url || (c.tokko_id ? `https://www.tokkobroker.com/property/${c.tokko_id}/` : null),
+        portal: 'Real Aires', titulo: d.titulo || null, tipo: d.tipo || null, operacion: c.operacion,
+        direccion: c.direccion, barrio: c.barrio, precio: c.precio, moneda: c.moneda,
+        expensas: d.expensas || null, exp_moneda: 'ARS', amb: d.ambientes ?? null, dorm: d.dormitorios ?? null,
+        banos: d.banos ?? null, cocheras: d.cocheras || null, sup_cub: d.sup_cubierta ?? null, sup_tot: d.sup_total ?? null,
+        antiguedad: d.antiguedad ?? null,
+        contacto_anunciante: c.asesor ? c.asesor + ' (Real Aires)' : 'Real Aires',
+        contacto_tel: asesor?.telefono || null, contacto_whatsapp: asesor?.telefono || null, contacto_email: c.asesor_email || null,
+        datos: { propia: true, comercializacion_id: c.id, tokko_id: c.tokko_id || null },
+      })
+    }
+    const ok = await bqVincular(propId, { prioridad: 'Alta' })
+    if (ok) registrarLog('agregar_propia_busqueda', 'busquedas', bqActual.id, { comercializacion_id: c.id, direccion: c.direccion })
+  } catch (e) { toast('No se pudo agregar: ' + e.message, true) }
 }
 
 // ── alta de propiedades ───────────────────────────────────────────
