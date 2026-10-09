@@ -25,12 +25,13 @@ const claveDir = (s: unknown) => norm(s).replace(/\s+/g, '')
 const limpia = (s: unknown) => String(s ?? '').replace(/\s+/g, ' ').trim()
 const hoy = () => new Date().toISOString().slice(0, 10)
 
-// Estados de Tokko: 2 disponible, 3 reservada; propiedad eliminada en Tokko → retirada
+// Estados de Tokko (campo status): 2 disponible, 3 reservada, 1 tasación, 4 no disponible.
+// No se usa deleted_at: Tokko lo informa también en propiedades vigentes.
 function estadoDe(p: any, actual?: string) {
   if (actual === 'Vendida') return 'Vendida'
-  if (p.deleted_at) return 'Retirada'
-  if (p.status === 3) return 'Reservada'
   if (p.status === 2) return 'Activa'
+  if (p.status === 3) return 'Reservada'
+  if (p.status === 4) return 'Retirada'
   return 'Pausada'
 }
 
