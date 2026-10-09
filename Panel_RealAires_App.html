@@ -808,11 +808,11 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
               <thead>
                 <tr>
                   <th>Propiedad</th><th>Asesor</th><th>Precio</th><th>Autorización</th>
-                  <th>Visitas</th><th>Próxima visita</th><th>Última etapa</th><th>Estado</th><th></th>
+                  <th>Consultas</th><th>Visitas</th><th>Próxima visita</th><th>Última etapa</th><th>Estado</th><th></th>
                 </tr>
               </thead>
               <tbody id="com-tbody">
-                <tr><td colspan="9" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
+                <tr><td colspan="10" class="loading"><div class="spinner"></div><br>Cargando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -1902,6 +1902,14 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
       </div>
       <div id="com-historial" style="font-size:11.5px;color:#6B7280;margin-top:8px"></div>
 
+      <div id="com-consultas-wrap" style="margin-top:22px;display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:14px;font-weight:700;color:#0F1F3D">Consultas <span id="com-consultas-count" style="color:#9CA3AF;font-weight:600"></span></div>
+          <select id="com-cons-filtro" class="filter" style="padding:5px 8px;font-size:12px" onchange="renderConsultasCom()"><option value="">Todas</option><option>Nueva</option><option>Contactada</option><option>Visita agendada</option><option>Descartada</option></select>
+        </div>
+        <div id="com-cons-canales" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+        <div id="com-consultas-list"></div>
+      </div>
       <div id="com-visitas-wrap" style="margin-top:22px;display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
           <div style="font-size:14px;font-weight:700;color:#0F1F3D">Visitas <span id="com-visitas-count" style="color:#9CA3AF;font-weight:600"></span></div>
@@ -7254,12 +7262,13 @@ async function loadComercializacion() {
     sb.from('visitas').select('*').order('fecha_hora', { ascending: false }),
   ])
   if (rc.error) {
-    document.getElementById('com-tbody').innerHTML = `<tr><td colspan="9" class="table-empty">No se pudo cargar (${raEsc(rc.error.message)}). Verificá que se haya ejecutado sql/comercializacion.sql.</td></tr>`
+    document.getElementById('com-tbody').innerHTML = `<tr><td colspan="10" class="table-empty">No se pudo cargar (${raEsc(rc.error.message)}). Verificá que se haya ejecutado sql/comercializacion.sql.</td></tr>`
     return
   }
   comData = rc.data || []
   visData = rv.data || []
   _cargarCruceCom()
+  await _cargarConsultas()
   const selA = document.getElementById('com-f-asesor')
   if (selA && !selA.dataset.init) {
     selA.dataset.init = '1'
@@ -7312,9 +7321,17 @@ function renderComercializacion() {
         <button class="action-btn" onclick="openComDetalle('${c.id}')">Ver</button></div>` }).join('')}
       ${infPend.length > 8 ? `<div style="font-size:11.5px;color:#1E40AF;margin-top:4px">y ${infPend.length - 8} más</div>` : ''}
     </div>` : ''
-  if (pend.length || infPend.length) {
+  const consPend = _consultasSinContactar(!window.isAdmin)
+  const htmlCons = consPend.length ? `<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 16px;margin-bottom:10px">
+      <div style="font-weight:700;color:#991B1B;font-size:13px;margin-bottom:6px">📩 Consultas sin contactar (más de ${CONS_HORAS_ALERTA} h)</div>
+      ${consPend.slice(0, 8).map(q => { const c = comData.find(x => x.id === q.comercializacion_id); return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:4px 0;font-size:12.5px;color:#7F1D1D">
+        <span>${_fechaHora(q.recibida_at)} · <strong>${raEsc(c?.direccion || q.propiedad_texto || 'Propiedad')}</strong> · ${raEsc(q.portal || '')} · ${raEsc(q.interesado || '')}${window.isAdmin && c ? ' · ' + raEsc(c.asesor || 'Sin asignar') : ''}</span>
+        <button class="action-btn" onclick="openComDetalle('${q.comercializacion_id}')">Ver</button></div>` }).join('')}
+      ${consPend.length > 8 ? `<div style="font-size:11.5px;color:#991B1B;margin-top:4px">y ${consPend.length - 8} más</div>` : ''}
+    </div>` : ''
+  if (pend.length || infPend.length || consPend.length) {
     box.style.display = 'block'
-    box.innerHTML = htmlInf + (!pend.length ? '' : `<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px">
+    box.innerHTML = htmlCons + htmlInf + (!pend.length ? '' : `<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:12px 16px">
       <div style="font-weight:700;color:#92400E;font-size:13px;margin-bottom:6px">⏰ Visitas sin devolución cargada</div>
       ${pend.slice(0, 8).map(v => {
         const c = comData.find(x => x.id === v.comercializacion_id)
@@ -7327,7 +7344,7 @@ function renderComercializacion() {
   } else box.style.display = 'none'
 
   const tb = document.getElementById('com-tbody')
-  if (!lista.length) { tb.innerHTML = '<tr><td colspan="9" class="table-empty">No hay propiedades con estos filtros.</td></tr>'; return }
+  if (!lista.length) { tb.innerHTML = '<tr><td colspan="10" class="table-empty">No hay propiedades con estos filtros.</td></tr>'; return }
   tb.innerHTML = lista.map(c => {
     const vs = _visitasDe(c.id)
     const realizadas = vs.filter(v => v.estado === 'Realizada').length
@@ -7340,6 +7357,7 @@ function renderComercializacion() {
       <td>${c.asesor ? raEsc(c.asesor) : '<span style="color:#D97706;font-size:12px">Sin asignar</span>'}</td>
       <td>${c.precio ? raEsc(c.moneda) + ' ' + Number(c.precio).toLocaleString('es-AR') : '—'}</td>
       <td style="min-width:150px">${_autzMini(c)}</td>
+      <td style="text-align:center">${_consultasCelda(c)}</td>
       <td style="text-align:center"><strong>${realizadas}</strong><span style="color:#9CA3AF"> / ${vs.length}</span>${pendC ? ' <span title="Devoluciones pendientes" style="color:#D97706">⏰' + pendC + '</span>' : ''}</td>
       <td style="color:#374151;font-size:12px">${proxima ? _fechaHora(proxima.fecha_hora) : '—'}</td>
       <td style="font-size:12px">${ultEtapa ? raEsc(ultEtapa.etapa) : '—'}</td>
@@ -7435,6 +7453,107 @@ async function marcarInformeEnviado(n, deshacer) {
   renderAutzCom(); renderComercializacion(); actualizarBadgeVisitas()
 }
 
+// ── Consultas de interesados (avisos de Tokko) ─────────────────────
+const CONS_HORAS_ALERTA = 2
+const CONS_ESTADO_COLOR = { Nueva: ['#FEE2E2', '#B91C1C'], Contactada: ['#DBEAFE', '#1D4ED8'], 'Visita agendada': ['#DCFCE7', '#15803D'], Descartada: ['#F3F4F6', '#6B7280'] }
+let consData = []        // consultas visibles para el usuario (propias o todas si es admin)
+let consResumen = {}     // comercializacion_id → { total, nuevas, ultima } (todo el equipo, sin datos personales)
+
+async function _cargarConsultas() {
+  const desde = new Date(Date.now() - 400 * 864e5).toISOString()
+  const [rc, rr] = await Promise.all([
+    sb.from('consultas').select('*').gte('recibida_at', desde).order('recibida_at', { ascending: false }).limit(5000),
+    sb.rpc('ra_consultas_resumen'),
+  ])
+  consData = rc.error ? [] : (rc.data || [])
+  consResumen = {}
+  ;(rr.error ? [] : (rr.data || [])).forEach(r => { consResumen[r.comercializacion_id] = r })
+}
+
+function _consultasDe(comId) { return consData.filter(q => q.comercializacion_id === comId) }
+
+function _consultasSinContactar(soloPropias) {
+  const limite = Date.now() - CONS_HORAS_ALERTA * 3600 * 1000
+  return consData.filter(q => q.estado === 'Nueva' && new Date(q.recibida_at).getTime() < limite && q.comercializacion_id)
+    .filter(q => { if (!soloPropias) return true; const c = comData.find(x => x.id === q.comercializacion_id); return c && (c.asesor_email || '').toLowerCase() === _yo() })
+}
+
+function _consultasCelda(c) {
+  const mias = _consultasDe(c.id)
+  const r = consResumen[c.id] || (mias.length ? { total: mias.length } : null)
+  if (!r || !r.total) return '<span style="color:#9CA3AF">0</span>'
+  const nuevas = mias.length ? mias.filter(q => q.estado === 'Nueva').length : 0
+  return `<strong>${r.total}</strong>${nuevas ? ` <span title="Sin contactar" style="background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:0 6px;font-size:10.5px;font-weight:700">${nuevas} nueva${nuevas > 1 ? 's' : ''}</span>` : ''}`
+}
+
+function _consultasPorCanal(c, desdeStr) {
+  const desde = desdeStr ? parseLocalDate(desdeStr) : (c.fecha_publicacion ? parseLocalDate(c.fecha_publicacion) : null)
+  const out = {}
+  _consultasDe(c.id).filter(q => !desde || new Date(q.recibida_at) >= desde).forEach(q => {
+    const k = INF_CANALES.includes(q.portal) ? q.portal : 'Otros'
+    out[k] = (out[k] || 0) + 1
+  })
+  return out
+}
+
+function renderConsultasCom() {
+  const wrap = document.getElementById('com-consultas-wrap')
+  const c = _comActual
+  if (!wrap || !c) return
+  const lista = _consultasDe(c.id)
+  const total = consResumen[c.id]?.total || lista.length
+  const puede = _puedeEditarCom(c)
+  if (!total && !lista.length) { wrap.style.display = 'none'; return }
+  wrap.style.display = 'block'
+  document.getElementById('com-consultas-count').textContent = `(${total || lista.length})`
+  const porCanal = {}
+  lista.forEach(q => { const k = q.portal || 'Sin portal'; porCanal[k] = (porCanal[k] || 0) + 1 })
+  document.getElementById('com-cons-canales').innerHTML = Object.entries(porCanal).sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => `<span style="background:#F3F4F6;border-radius:12px;padding:3px 10px;font-size:11.5px;color:#374151">${raEsc(k)}: <strong>${n}</strong></span>`).join('')
+  const el = document.getElementById('com-consultas-list')
+  document.getElementById('com-cons-filtro').style.display = puede ? '' : 'none'
+  if (!puede) { el.innerHTML = `<div style="font-size:12.5px;color:#6B7280">Esta propiedad recibió ${total} consulta${total !== 1 ? 's' : ''}. El detalle lo gestiona ${raEsc(c.asesor || 'el asesor responsable')}.</div>`; return }
+  const filtro = document.getElementById('com-cons-filtro').value
+  const vis = lista.filter(q => !filtro || q.estado === filtro)
+  if (!vis.length) { el.innerHTML = '<div style="font-size:12px;color:#9CA3AF">No hay consultas con este filtro.</div>'; return }
+  el.innerHTML = vis.slice(0, 50).map(q => {
+    const tarde = q.estado === 'Nueva' && Date.now() - new Date(q.recibida_at) > CONS_HORAS_ALERTA * 3600 * 1000
+    const wa = q.interesado_tel ? `https://wa.me/${String(q.interesado_tel).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${q.interesado || ''}, soy ${_miNombre()} de Real Aires. Te escribo por tu consulta sobre ${c.direccion}.`)}` : null
+    return `<div style="border:1px solid ${tarde ? '#FECACA' : '#E5E7EB'};background:${tarde ? '#FEF2F2' : '#fff'};border-radius:10px;padding:9px 12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <div style="font-weight:700;font-size:13px;color:#0F1F3D">${raEsc(q.interesado || 'Interesado')} <span style="font-weight:400;color:#6B7280;font-size:11.5px">· ${_fechaHora(q.recibida_at)} · ${raEsc(q.portal || 'Sin portal')}</span></div>
+          <div style="font-size:11.5px;color:#4B5563;margin-top:2px">${q.interesado_tel ? raEsc(q.interesado_tel) : ''}${q.interesado_email ? ' · ' + raEsc(q.interesado_email) : ''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${wa ? `<a class="action-btn" style="text-decoration:none;border-color:#86EFAC;color:#15803D" href="${wa}" target="_blank" onclick="marcarConsulta('${q.id}','Contactada', true)">WhatsApp</a>` : ''}
+          ${q.aviso_url ? `<a class="action-btn" style="text-decoration:none" href="${raEsc(q.aviso_url)}" target="_blank">Aviso ↗</a>` : ''}
+          <button class="action-btn" style="border-color:#93C5FD;color:#1D4ED8" onclick="agendarDesdeConsulta('${q.id}')">Agendar visita</button>
+          <select class="bq-mini-select" onchange="marcarConsulta('${q.id}', this.value)">${['Nueva', 'Contactada', 'Visita agendada', 'Descartada'].map(e => `<option ${e === q.estado ? 'selected' : ''}>${e}</option>`).join('')}</select>
+        </div>
+      </div>
+      ${q.mensaje ? `<div style="font-size:12px;color:#374151;margin-top:6px;white-space:pre-wrap">${raEsc(q.mensaje)}</div>` : ''}
+    </div>`
+  }).join('') + (vis.length > 50 ? `<div style="font-size:11.5px;color:#9CA3AF">Se muestran las 50 más recientes de ${vis.length}.</div>` : '')
+}
+
+async function marcarConsulta(id, estado, silencioso) {
+  const q = consData.find(x => x.id === id)
+  if (!q || (silencioso && q.estado !== 'Nueva')) return
+  const row = { estado, updated_at: new Date().toISOString() }
+  if (estado !== 'Nueva' && !q.contactada_at) row.contactada_at = new Date().toISOString()
+  const { error } = await sb.from('consultas').update(row).eq('id', id)
+  if (error) { toast('No se pudo actualizar: ' + error.message, true); return }
+  Object.assign(q, row)
+  registrarLog('consulta_' + estado.toLowerCase().replace(/ /g, '_'), 'consultas', id, { propiedad: _comActual?.direccion })
+  renderConsultasCom(); renderComercializacion(); actualizarBadgeVisitas()
+}
+
+function agendarDesdeConsulta(id) {
+  const q = consData.find(x => x.id === id)
+  if (q) openVisita(null, q)
+}
+
 // ── Cruce con búsquedas activas (compradores que encajan) ───────────
 async function _cargarCruceCom() {
   const ids = comData.filter(c => c.estado === 'Activa').map(c => c.id)
@@ -7486,6 +7605,7 @@ async function actualizarBadgeVisitas() {
   }
   const n = lista.filter(v => _pendienteDevolucion(v) && (v.asesor_email || '').toLowerCase() === _yo()).length
     + props.filter(c => (c.asesor_email || '').toLowerCase() === _yo() && _autz(c)?.pendientes.length).length
+    + _consultasSinContactar(true).length
   badge.textContent = n
   badge.style.display = n ? 'inline-block' : 'none'
 }
@@ -7559,6 +7679,7 @@ async function openComNueva() {
   document.getElementById('com-m-title').textContent = 'Nueva propiedad en comercialización'
   document.getElementById('com-m-sub').textContent = ''
   document.getElementById('com-visitas-wrap').style.display = 'none'
+  document.getElementById('com-consultas-wrap').style.display = 'none'
   document.getElementById('com-compradores').style.display = 'none'
   document.getElementById('com-informes').style.display = 'none'
   document.getElementById('com-desde-ficha-wrap').style.display = ''
@@ -7662,6 +7783,7 @@ function openComDetalle(id) {
   document.getElementById('com-m-sub').textContent = [c.asesor, c.operacion, dias !== null ? `publicada hace ${dias} días` : null].filter(Boolean).join(' · ')
   document.getElementById('com-visitas-wrap').style.display = 'block'
   _renderCompradoresCom()
+  renderConsultasCom()
   document.getElementById('com-informes').style.display = _puedeEditarCom(c) ? 'block' : 'none'
   if (_puedeEditarCom(c)) _renderInformesCom()
   renderVisitasCom()
@@ -7739,8 +7861,9 @@ function openVisitaPorId(id) {
   openVisita(v)
 }
 
-async function openVisita(v) {
+async function openVisita(v, desdeConsulta) {
   if (!_comActual) return
+  window._visDesdeConsulta = desdeConsulta?.id || null
   const nueva = !v
   document.getElementById('vis-id').value = v?.id || ''
   document.getElementById('vis-title').textContent = nueva ? 'Nueva visita' : (_pendienteDevolucion(v) ? 'Cargar devolución' : 'Editar visita')
@@ -7760,6 +7883,12 @@ async function openVisita(v) {
   document.getElementById('vis-btn-eliminar').style.display = (!nueva && _puedeEditarVis(v)) ? 'inline-flex' : 'none'
   visToggleDevolucion()
   await _cargarBusquedasVis(v?.busqueda_id)
+  if (desdeConsulta) {
+    document.getElementById('vis-interesado').value = desdeConsulta.interesado || ''
+    document.getElementById('vis-tel').value = desdeConsulta.interesado_tel || ''
+    const canal = desdeConsulta.portal
+    if (canal && [...document.getElementById('vis-canal').options].some(o => o.value === canal || o.text === canal)) document.getElementById('vis-canal').value = canal
+  }
   if (nueva) visSugerirEtapa()
   document.getElementById('modal-visita').classList.add('open')
 }
@@ -7798,6 +7927,10 @@ async function saveVisita() {
     : await sb.from('visitas').insert(row).select().single()
   if (res.error) { toast('No se pudo guardar la visita: ' + res.error.message, true); return }
   registrarLog(id ? 'actualizar_visita' : 'crear_visita', 'visitas', res.data.id, { propiedad: _comActual.direccion, estado })
+  if (!id && window._visDesdeConsulta) {
+    await sb.from('consultas').update({ estado: 'Visita agendada', visita_id: res.data.id, updated_at: new Date().toISOString(), contactada_at: new Date().toISOString() }).eq('id', window._visDesdeConsulta)
+    window._visDesdeConsulta = null
+  }
   closeModal('visita')
   toast(id ? 'Visita actualizada' : 'Visita cargada')
   await loadComercializacion()
@@ -7982,7 +8115,7 @@ function _infDefaults(c) {
     sintesis: sint,
     acciones: INF_ACCIONES.filter(x => !/Zonaprop|Meta|Cartel/.test(x)),
     acciones_extra: '',
-    consultas: {},
+    consultas: _consultasPorCanal(c),
     zp_on: false, zp: {}, zp_lectura: '',
     meta_on: false, meta: {}, meta_inv: false, meta_lectura: '',
     vis_on: true, vis_coment: true,

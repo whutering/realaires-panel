@@ -199,3 +199,73 @@ $$;
 
 revoke all on function public.ra_cruce_comercializaciones(uuid[]) from public, anon;
 grant execute on function public.ra_cruce_comercializaciones(uuid[]) to authenticated;
+
+-- ════════════════════════════════════════════════════════════════════
+-- CONSULTAS DE INTERESADOS (avisos de Tokko leídos desde Gmail) (agregado)
+-- ════════════════════════════════════════════════════════════════════
+create table if not exists public.consultas (
+  id                  uuid primary key default gen_random_uuid(),
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now(),
+  recibida_at         timestamptz not null,
+  tokko_webcontact_id bigint,
+  tokko_id            bigint,
+  tokko_ref           text,
+  comercializacion_id uuid references public.comercializaciones(id) on delete set null,
+  propiedad_texto     text,
+  portal              text,
+  etiquetas           text[] not null default '{}',
+  interesado          text,
+  interesado_email    text,
+  interesado_tel      text,
+  mensaje             text,
+  aviso_url           text,
+  estado              text not null default 'Nueva',   -- Nueva | Contactada | Visita agendada | Descartada
+  contactada_at       timestamptz,
+  visita_id           uuid,
+  gmail_id            text,
+  unique (tokko_webcontact_id, tokko_id)
+);
+create index if not exists consultas_com_idx on public.consultas (comercializacion_id, recibida_at desc);
+create index if not exists consultas_estado_idx on public.consultas (estado, recibida_at desc);
+
+alter table public.consultas enable row level security;
+drop policy if exists consultas_select on public.consultas;
+drop policy if exists consultas_update on public.consultas;
+-- Ven y gestionan la consulta el asesor responsable de la propiedad y los administradores.
+-- El alta la hace solo la función ingresar-consulta (clave de servicio).
+create policy consultas_select on public.consultas for select to authenticated
+  using (public.ra_es_admin() or exists (select 1 from public.comercializaciones c
+         where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')));
+create policy consultas_update on public.consultas for update to authenticated
+  using (public.ra_es_admin() or exists (select 1 from public.comercializaciones c
+         where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')))
+  with check (public.ra_es_admin() or exists (select 1 from public.comercializaciones c
+         where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')));
+
+-- Conteo de consultas por propiedad visible para todo el equipo (sin datos personales)
+create or replace function public.ra_consultas_resumen()
+returns table (comercializacion_id uuid, total bigint, nuevas bigint, ultima timestamptz)
+language sql stable security definer
+set search_path = public
+as $$
+  select comercializacion_id, count(*), count(*) filter (where estado = 'Nueva'), max(recibida_at)
+  from consultas where comercializacion_id is not null and auth.uid() is not null
+  group by comercializacion_id
+$$;
+revoke all on function public.ra_consultas_resumen() from public, anon;
+grant execute on function public.ra_consultas_resumen() to authenticated;
+
+-- Vincular consultas que llegaron antes de que la propiedad se sincronizara
+create or replace function public.ra_vincular_consultas()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.tokko_id is not null then
+    update consultas set comercializacion_id = new.id
+    where comercializacion_id is null and tokko_id = new.tokko_id;
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_vincular_consultas on public.comercializaciones;
+create trigger trg_vincular_consultas after insert or update of tokko_id on public.comercializaciones
+  for each row execute function public.ra_vincular_consultas();
