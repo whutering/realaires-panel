@@ -124,3 +124,32 @@ alter table public.comercializaciones add column if not exists autorizacion_dias
 alter table public.comercializaciones add column if not exists informes_enviados   jsonb not null default '[]';
 alter table public.comercializaciones add column if not exists informes_avisados   int[] not null default '{}';
 alter table public.reportes_operacion  add column if not exists comercializacion_id uuid;
+
+-- ════════════════════════════════════════════════════════════════════
+-- INFORMES AL PROPIETARIO (agregado)
+-- ════════════════════════════════════════════════════════════════════
+alter table public.comercializaciones add column if not exists propietario_email text;
+
+create table if not exists public.informes_propietario (
+  id                  uuid primary key default gen_random_uuid(),
+  created_at          timestamptz not null default now(),
+  updated_at          timestamptz not null default now(),
+  comercializacion_id uuid not null references public.comercializaciones(id) on delete cascade,
+  hito                int,
+  estado              text not null default 'Borrador',  -- Borrador | Descargado | Enviado
+  datos               jsonb not null default '{}',
+  creado_por          text default (auth.jwt() ->> 'email'),
+  descargado_at       timestamptz,
+  enviado_at          timestamptz,
+  enviado_a           text
+);
+create index if not exists informes_prop_com_idx on public.informes_propietario (comercializacion_id, created_at desc);
+
+alter table public.informes_propietario enable row level security;
+drop policy if exists inf_prop_all on public.informes_propietario;
+-- El asesor responsable de la propiedad y los administradores
+create policy inf_prop_all on public.informes_propietario for all to authenticated
+  using (public.ra_es_admin() or exists (select 1 from public.comercializaciones c
+         where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')))
+  with check (public.ra_es_admin() or exists (select 1 from public.comercializaciones c
+         where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')));

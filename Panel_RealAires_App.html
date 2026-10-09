@@ -137,6 +137,95 @@ tr:hover td { background: #FAFBFC; }
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--blue); }
 .form-group textarea { resize: vertical; min-height: 72px; }
+/* ── Informe al propietario ── */
+.inf-layout { display:grid; grid-template-columns: minmax(0,1fr) 520px; gap:0; max-height:calc(100vh - 210px); }
+.inf-form { overflow-y:auto; padding:1rem 1.25rem; border-right:1px solid var(--border); max-height:calc(100vh - 210px); }
+.inf-preview-wrap { overflow-y:auto; background:#E5E7EB; padding:16px 0; max-height:calc(100vh - 210px); }
+.inf-sec { border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+.inf-sec-t { font-size:13px; font-weight:700; color:var(--navy); margin-bottom:10px; }
+.inf-hint { font-weight:400; color:#9CA3AF; font-size:11.5px; margin-left:6px; }
+.inf-checks { display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:#374151; }
+.inf-checks label { display:flex; gap:8px; align-items:flex-start; cursor:pointer; }
+.inf-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.inf-tabla-in { width:100%; border-collapse:collapse; font-size:12px; }
+.inf-tabla-in th { text-align:left; color:#6B7280; font-weight:600; padding:4px; }
+.inf-tabla-in td { padding:3px 4px; }
+.inf-tabla-in input { width:100%; padding:6px 8px; border:1.5px solid var(--border); border-radius:6px; font-size:12px; }
+.inf-escala { width:476px; height:674px; overflow:hidden; margin:0 auto 14px; box-shadow:0 2px 10px rgba(0,0,0,.18); background:#fff; }
+.inf-page-wrap { transform:scale(.5995); transform-origin:top left; width:794px; }
+@media (max-width:1000px){ .inf-layout{grid-template-columns:1fr; max-height:none} .inf-form,.inf-preview-wrap{max-height:none} }
+/* Páginas A4 */
+.inf-page { width:794px; height:1123px; position:relative; background:#fff; color:#2B2B2B; font-family:'Source Sans 3', Arial, sans-serif; box-sizing:border-box; overflow:hidden; }
+.inf-page * { box-sizing:border-box; }
+.inf-portada { background:#1C1C1C; color:#fff; padding:64px 72px; display:flex; flex-direction:column; }
+.inf-logo-portada { width:190px; height:auto; }
+.inf-portada-centro { margin-top:190px; }
+.inf-portada-kicker { font-family:Sora, Arial, sans-serif; letter-spacing:3px; font-size:13px; color:#C9A24E; font-weight:600; }
+.inf-portada-dir { font-family:Sora, Arial, sans-serif; font-size:42px; line-height:1.15; font-weight:700; margin:16px 0 10px; color:#fff; }
+.inf-portada-barrio { font-size:17px; color:#D9D4C7; }
+.inf-portada-grid { margin-top:auto; display:grid; grid-template-columns:1fr 1fr; gap:22px 32px; border-top:1px solid rgba(201,162,78,.45); padding-top:26px; }
+.inf-portada-grid span { display:block; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:#C9A24E; margin-bottom:4px; }
+.inf-portada-grid b { font-family:Sora, Arial, sans-serif; font-size:15px; font-weight:600; }
+.inf-portada-pie { margin-top:42px; font-size:11.5px; color:#9A968C; line-height:1.6; }
+.inf-head { position:absolute; top:0; left:0; right:0; padding:34px 72px 0; display:flex; justify-content:space-between; align-items:center; }
+.inf-head img { width:128px; height:auto; }
+.inf-head div { text-align:right; font-size:11px; color:#5E5E5E; line-height:1.4; }
+.inf-head b { color:#2B2B2B; font-weight:600; }
+.inf-body { padding:120px 72px 70px; display:flex; flex-direction:column; gap:14px; }
+.inf-foot { position:absolute; bottom:28px; left:72px; right:72px; display:flex; justify-content:space-between; font-size:10.5px; color:#9A968C; border-top:1px solid #D9D4C7; padding-top:10px; }
+.inf-kicker { font-family:Sora, Arial, sans-serif; color:#7E6122; font-size:13px; font-weight:700; letter-spacing:2px; margin-top:6px; }
+.inf-h2 { font-family:Sora, Arial, sans-serif; font-size:24px; font-weight:700; color:#1C1C1C; margin:-8px 0 2px; }
+.inf-h3 { font-family:Sora, Arial, sans-serif; font-size:14.5px; font-weight:700; color:#1C1C1C; margin:8px 0 0; }
+.inf-p { font-size:13.5px; line-height:1.55; margin:0; }
+.inf-muted { color:#8A867C; font-size:11.5px; }
+.inf-cards4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.inf-cards3 { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.inf-card { background:#F4F1EA; border-radius:10px; padding:14px; }
+.inf-card-v { font-family:Sora, Arial, sans-serif; font-size:24px; font-weight:700; color:#1C1C1C; }
+.inf-card-l { font-size:11.5px; color:#5E5E5E; margin-top:2px; }
+.inf-sintesis { background:#1C1C1C; color:#fff; border-radius:10px; padding:14px 18px; }
+.inf-sintesis-t { font-family:Sora, Arial, sans-serif; font-size:11px; letter-spacing:2px; color:#C9A24E; font-weight:700; margin-bottom:4px; }
+.inf-sintesis p { margin:0; font-size:13px; line-height:1.5; }
+.inf-ficha-wrap { display:flex; gap:16px; align-items:flex-start; }
+.inf-foto { width:210px; height:160px; object-fit:cover; border-radius:10px; flex-shrink:0; }
+.inf-ficha { width:100%; border-collapse:collapse; font-size:12.5px; }
+.inf-ficha td { padding:7px 0; border-bottom:1px solid #D9D4C7; vertical-align:top; }
+.inf-ficha td:first-child { color:#7E6122; font-weight:600; width:110px; }
+.inf-acciones { margin:0; padding-left:20px; font-size:13px; line-height:1.5; }
+.inf-acciones li { margin-bottom:9px; }
+.inf-tabla { width:100%; border-collapse:collapse; font-size:12.5px; }
+.inf-tabla th { text-align:left; font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:#7E6122; padding:8px; border-bottom:2px solid #B08A36; }
+.inf-tabla td { padding:8px; border-bottom:1px solid #D9D4C7; vertical-align:top; }
+.inf-tabla .inf-total td { font-weight:700; background:#F4F1EA; }
+.inf-tabla-vis td { font-size:11.5px; padding:6px 8px; }
+.inf-chip { display:inline-block; background:#F4F1EA; border-radius:10px; padding:1px 7px; font-size:10.5px; margin:0 2px 2px 0; color:#5E5E5E; }
+.inf-coment { font-size:11px; color:#2B2B2B; margin-top:3px; font-style:italic; }
+.inf-glosario { font-size:11px; color:#5E5E5E; line-height:1.5; }
+.inf-barras { display:flex; flex-direction:column; gap:10px; }
+.inf-barra-fila { display:flex; gap:10px; align-items:center; }
+.inf-barra-lbl { width:100px; font-size:11.5px; font-weight:600; color:#5E5E5E; }
+.inf-barra-cont { flex:1; display:flex; flex-direction:column; gap:3px; }
+.inf-barra { background:#B08A36; height:16px; border-radius:4px; min-width:4px; position:relative; }
+.inf-barra2 { background:#1C1C1C; }
+.inf-barra span { position:absolute; left:calc(100% + 6px); top:0; font-size:10.5px; white-space:nowrap; color:#5E5E5E; line-height:16px; }
+.inf-lectura { margin:0; padding-left:18px; font-size:12.5px; line-height:1.5; }
+.inf-recorrido { display:flex; align-items:center; gap:10px; }
+.inf-recorrido > div:not(.inf-flecha) { flex:1; background:#F4F1EA; border-radius:10px; padding:12px; text-align:center; }
+.inf-recorrido b, .inf-val b, .inf-precios b { display:block; font-family:Sora, Arial, sans-serif; font-size:18px; color:#1C1C1C; }
+.inf-recorrido span, .inf-val span, .inf-precios span { font-size:11px; color:#5E5E5E; }
+.inf-flecha { color:#B08A36; font-size:22px; font-weight:700; }
+.inf-val { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.inf-val > div { background:#F4F1EA; border-radius:8px; padding:8px 10px; }
+.inf-precios { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.inf-precios > div:not(.inf-flecha) { background:#F4F1EA; border-radius:8px; padding:8px 12px; }
+.inf-cards3c { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.inf-concl { border:1px solid #D9D4C7; border-top:3px solid #B08A36; border-radius:8px; padding:12px; }
+.inf-concl-t { font-family:Sora, Arial, sans-serif; font-weight:700; font-size:13px; color:#1C1C1C; margin-bottom:4px; }
+.inf-concl p { margin:0; font-size:12px; line-height:1.45; }
+.inf-firma { display:flex; gap:28px; align-items:flex-end; margin-top:16px; padding-top:14px; border-top:1px solid #D9D4C7; }
+.inf-firma > div { display:flex; flex-direction:column; font-size:11.5px; color:#5E5E5E; }
+.inf-firma b { font-family:Sora, Arial, sans-serif; font-size:13px; color:#1C1C1C; }
+.inf-firma-logo { width:110px; margin-left:auto; }
 .com-chips { display:flex; flex-wrap:wrap; gap:6px; }
 .com-chip { padding:5px 11px; border-radius:16px; border:1.5px solid var(--border); background:#fff; color:#4B5563; font-size:12px; font-weight:600; cursor:pointer; }
 .com-chip.on { background:#0A0A0A; border-color:#0A0A0A; color:#fff; }
@@ -1777,6 +1866,13 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
             <span style="font-size:12.5px;color:#4B5563">Vigencia</span><input type="number" id="com-autz-dias" min="1" step="1" style="max-width:90px" oninput="renderAutzCom()" /><span style="font-size:12.5px;color:#4B5563">días</span>
           </div>
           <div id="com-autz-barra" style="margin-top:12px"></div>
+          <div id="com-informes" style="display:none;margin-top:14px;padding:12px 14px;border:1px solid #E5E7EB;border-radius:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="font-size:13px;font-weight:700;color:#0F1F3D">Informes al propietario</div>
+              <button class="btn-add" style="padding:6px 12px;font-size:12px" onclick="abrirInforme(_comActual.id)">📄 Preparar informe</button>
+            </div>
+            <div id="com-informes-list"></div>
+          </div>
         </div>
         <div class="form-group full"><label>Portales</label>
           <div style="font-size:13px;color:#374151"><span id="com-portales-resumen"></span>
@@ -1804,6 +1900,114 @@ const LOGO_BLACK_B64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABcgAAAKiCA
         <button class="btn-cancel" onclick="closeModal('com')">Cerrar</button>
         <button class="btn-save" id="com-btn-guardar" onclick="saveCom()">Guardar</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INFORME AL PROPIETARIO -->
+<div class="modal-overlay" id="modal-informe" style="z-index:460">
+  <div class="modal" style="max-width:1180px">
+    <div class="modal-header">
+      <div>
+        <h2>Informe al propietario</h2>
+        <div id="inf-sub" style="font-size:12px;color:#6B7280;margin-top:2px"></div>
+      </div>
+      <button class="modal-close" onclick="cerrarInforme()">×</button>
+    </div>
+    <div class="inf-layout">
+      <!-- FORMULARIO -->
+      <div class="inf-form" id="inf-form">
+        <div class="inf-sec">
+          <div class="inf-sec-t">Datos generales</div>
+          <div class="form-grid">
+            <div class="form-group"><label>Informe</label><select id="inf-hito" onchange="infRender()"></select></div>
+            <div class="form-group"><label>Fecha del informe</label><input type="date" id="inf-fecha" oninput="infRender()"></div>
+            <div class="form-group"><label>Preparado para</label><input id="inf-prop" oninput="infRender()"></div>
+            <div class="form-group"><label>Email del propietario</label><input id="inf-prop-email" type="email" placeholder="para enviarlo desde el panel"></div>
+            <div class="form-group full"><label>Introducción</label><textarea id="inf-intro" rows="3" oninput="infRender()"></textarea></div>
+            <div class="form-group full"><label>En síntesis</label><textarea id="inf-sintesis" rows="3" oninput="infRender()"></textarea></div>
+          </div>
+        </div>
+
+        <div class="inf-sec">
+          <div class="inf-sec-t">Acciones realizadas</div>
+          <div id="inf-acciones" class="inf-checks"></div>
+          <div class="form-group" style="margin-top:8px"><label>Otras acciones (una por línea)</label><textarea id="inf-acciones-extra" rows="2" oninput="infRender()"></textarea></div>
+        </div>
+
+        <div class="inf-sec">
+          <div class="inf-sec-t">Consultas por canal <span class="inf-hint">las visitas se completan solas</span></div>
+          <div id="inf-consultas" class="inf-grid3"></div>
+        </div>
+
+        <div class="inf-sec">
+          <div class="inf-sec-t"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="inf-zp-on" onchange="infToggle('zp')"> Resultados en Zonaprop</label></div>
+          <div id="inf-zp" style="display:none">
+            <table class="inf-tabla-in">
+              <thead><tr><th></th><th>Nuestro aviso</th><th>Promedio</th><th>Mejor aviso</th></tr></thead>
+              <tbody id="inf-zp-body"></tbody>
+            </table>
+            <div class="form-group" style="margin-top:8px"><label>Nuestra lectura (una idea por línea)</label><textarea id="inf-zp-lectura" rows="3" oninput="infRender()"></textarea></div>
+          </div>
+        </div>
+
+        <div class="inf-sec">
+          <div class="inf-sec-t"><label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="inf-meta-on" onchange="infToggle('meta')"> Campaña en Meta</label></div>
+          <div id="inf-meta" style="display:none">
+            <div id="inf-meta-campos" class="inf-grid3"></div>
+            <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:#374151;margin-top:8px;cursor:pointer"><input type="checkbox" id="inf-meta-inv" onchange="infRender()"> Mostrar la inversión al propietario</label>
+            <div class="form-group" style="margin-top:8px"><label>Nuestra lectura (una idea por línea)</label><textarea id="inf-meta-lectura" rows="3" oninput="infRender()"></textarea></div>
+          </div>
+        </div>
+
+        <div class="inf-sec">
+          <div class="inf-sec-t">Visitas y devoluciones <span class="inf-hint" id="inf-vis-info"></span></div>
+          <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:#374151;cursor:pointer"><input type="checkbox" id="inf-vis-on" checked onchange="infRender()"> Incluir la página de visitas</label>
+          <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;color:#374151;margin-top:4px;cursor:pointer"><input type="checkbox" id="inf-vis-coment" checked onchange="infRender()"> Incluir los comentarios de cada visita</label>
+        </div>
+
+        <div class="inf-sec">
+          <div class="inf-sec-t">Conclusiones</div>
+          <div class="form-grid">
+            <div class="form-group full"><label>Visibilidad</label><textarea id="inf-c-vis" rows="2" oninput="infRender()"></textarea></div>
+            <div class="form-group full"><label>Interés</label><textarea id="inf-c-int" rows="2" oninput="infRender()"></textarea></div>
+            <div class="form-group full"><label>Conversión</label><textarea id="inf-c-conv" rows="2" oninput="infRender()"></textarea></div>
+            <div class="form-group full"><label>Posicionamiento de precio</label><textarea id="inf-precio-txt" rows="3" oninput="infRender()"></textarea></div>
+            <div class="form-group"><label>Precio propuesto (opcional)</label><input type="number" id="inf-precio-prop" oninput="infRender()"></div>
+            <div class="form-group full"><label>Próximos pasos (uno por línea)</label><textarea id="inf-pasos" rows="3" oninput="infRender()"></textarea></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA PREVIA -->
+      <div class="inf-preview-wrap"><div id="inf-preview"></div></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;flex-wrap:wrap">
+      <div id="inf-estado" style="font-size:12px;color:#6B7280"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-cancel" onclick="guardarInforme()">Guardar borrador</button>
+        <button class="btn-cancel" id="inf-btn-pdf" style="border-color:#0A0A0A;color:#0A0A0A" onclick="descargarInformePDF()">⬇ Descargar PDF</button>
+        <button class="btn-save" id="inf-btn-enviar" onclick="abrirEnvioInforme()">✉ Enviar al propietario</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ENVÍO DE INFORME -->
+<div class="modal-overlay" id="modal-inf-envio" style="z-index:470">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h2>Enviar informe al propietario</h2><button class="modal-close" onclick="closeModal('inf-envio')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Para</label><input type="email" id="inf-env-para"></div>
+        <div class="form-group full"><label>Asunto</label><input id="inf-env-asunto"></div>
+        <div class="form-group full"><label>Mensaje</label><textarea id="inf-env-msg" rows="6"></textarea></div>
+      </div>
+      <div style="font-size:12px;color:#6B7280;margin-top:8px">Se envía con el PDF adjunto, con copia a tu casilla. Si el propietario responde, la respuesta te llega a vos.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('inf-envio')">Cancelar</button>
+      <button class="btn-save" id="inf-env-btn" onclick="enviarInforme()">Enviar</button>
     </div>
   </div>
 </div>
@@ -7192,7 +7396,7 @@ function renderAutzCom() {
         <div style="font-size:11.5px;font-weight:700;color:#0F1F3D">${h.nombre}</div>
         <div style="font-size:11px;color:#6B7280">${h.fecha.toLocaleDateString('es-AR')}</div>
         <div style="font-size:11px;margin-top:4px;font-weight:600;color:${h.estado === 'enviado' ? '#15803D' : h.estado === 'pendiente' ? '#1D4ED8' : '#9CA3AF'}">${h.estado === 'enviado' ? '✓ Enviado' : h.estado === 'pendiente' ? 'Preparar ahora' : 'Próximo'}</div>
-        ${c?.id && puede && h.estado === 'pendiente' ? `<button class="action-btn" style="margin-top:6px;font-size:10.5px" onclick="marcarInformeEnviado(${h.n})">Marcar enviado</button>` : ''}
+        ${c?.id && puede && h.estado === 'pendiente' ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px"><button class="action-btn" style="font-size:10.5px;border-color:#93C5FD;color:#1D4ED8" onclick="abrirInforme('${c.id}')">Preparar</button><button class="action-btn" style="font-size:10.5px" onclick="marcarInformeEnviado(${h.n})">Marcar enviado</button></div>` : ''}
         ${c?.id && puede && h.estado === 'enviado' ? `<button class="action-btn" style="margin-top:6px;font-size:10.5px;color:#9CA3AF" onclick="marcarInformeEnviado(${h.n}, true)">Deshacer</button>` : ''}
       </div>`).join('')}
     </div>`
@@ -7264,7 +7468,7 @@ function _setComForm(c) {
   const tk = document.getElementById('com-tokko')
   if (c?.tokko_id) {
     const d = c.datos_tokko || {}
-    const ficha = [d.tipo, d.ambientes ? d.ambientes + ' amb.' : '', d.sup_total ? d.sup_total + ' m² totales' : '', d.sup_cubierta ? d.sup_cubierta + ' m² cub.' : '', d.expensas ? 'Expensas $' + Number(d.expensas).toLocaleString('es-AR') : ''].filter(Boolean).join(' · ')
+    const ficha = [d.tipo, d.ambientes ? d.ambientes + ' amb.' : '', d.sup_total ? Number(d.sup_total).toLocaleString('es-AR') + ' m² totales' : '', d.sup_cubierta ? Number(d.sup_cubierta).toLocaleString('es-AR') + ' m² cub.' : '', d.expensas ? 'Expensas $' + Number(d.expensas).toLocaleString('es-AR') : ''].filter(Boolean).join(' · ')
     tk.style.display = 'block'
     tk.innerHTML = `<div style="display:flex;gap:12px;align-items:center;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:10px 12px">
       ${d.foto ? `<img src="${raEsc(d.foto)}" alt="" style="width:72px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0">` : ''}
@@ -7300,6 +7504,7 @@ async function openComNueva() {
   document.getElementById('com-m-title').textContent = 'Nueva propiedad en comercialización'
   document.getElementById('com-m-sub').textContent = ''
   document.getElementById('com-visitas-wrap').style.display = 'none'
+  document.getElementById('com-informes').style.display = 'none'
   document.getElementById('com-desde-ficha-wrap').style.display = ''
   // Captaciones del prelisting que todavía no están en comercialización
   const { data } = await sb.from('fichas').select('id, calle, localidad, precio, moneda, operacion, asesor, datos').eq('captado', true).order('created_at', { ascending: false })
@@ -7400,6 +7605,8 @@ function openComDetalle(id) {
   const dias = c.fecha_publicacion ? Math.round((new Date() - parseLocalDate(c.fecha_publicacion)) / 864e5) : null
   document.getElementById('com-m-sub').textContent = [c.asesor, c.operacion, dias !== null ? `publicada hace ${dias} días` : null].filter(Boolean).join(' · ')
   document.getElementById('com-visitas-wrap').style.display = 'block'
+  document.getElementById('com-informes').style.display = _puedeEditarCom(c) ? 'block' : 'none'
+  if (_puedeEditarCom(c)) _renderInformesCom()
   renderVisitasCom()
   document.getElementById('modal-com').classList.add('open')
 }
@@ -7622,6 +7829,480 @@ async function crearComDesdeFicha(fichaId) {
   }, { onConflict: 'ficha_id', ignoreDuplicates: true })
   if (error) console.warn('[RealAires] No se pudo crear la comercialización:', error.message)
   else toast('La propiedad pasó a Comercialización')
+}
+</script>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// INFORME DE GESTIÓN COMERCIAL AL PROPIETARIO
+// Diseño basado en el informe modelo (Av. Pueyrredón 1035): A4, Sora + Source Sans 3
+// ════════════════════════════════════════════════════════════════════
+const INF_ACCIONES = [
+  'Relevamiento de la propiedad y producción de fotos',
+  'Descripción comercial orientada a los beneficios del inmueble',
+  'Publicación en los principales portales inmobiliarios',
+  'Aviso destacado en Zonaprop',
+  'Campaña de difusión en Meta (Facebook e Instagram)',
+  'Cartel en el inmueble',
+  'Difusión en la red de asesores de Real Aires y en la base de compradores',
+  'Seguimiento de consultas y coordinación de visitas',
+]
+const INF_CANALES = ['Zonaprop', 'Argenprop', 'MercadoLibre', 'Meta', 'Web Real Aires', 'Otros']
+const INF_ZP_FILAS = [['expo', 'Exposición (impresiones)'], ['visitas', 'Visitas al aviso'], ['interesados', 'Interesados (contactos)'], ['m2', 'Precio por m² (USD)']]
+const INF_META = [['alcance', 'Alcance'], ['reproducciones', 'Reproducciones'], ['clics', 'Clics al enlace'], ['conversaciones', 'Conversaciones iniciadas'], ['costo', 'Costo por conversación (USD)'], ['interacciones', 'Interacciones']]
+
+let _inf = null   // { c, id, datos }
+
+function _n(v) { const x = parseFloat(String(v ?? '').replace(',', '.')); return isNaN(x) ? null : x }
+function _fmtN(v) { return v == null ? '—' : Math.round(v).toLocaleString('es-AR') }
+function _fmtUSD(v, mon) { return v == null ? '—' : (mon || 'USD') + ' ' + Math.round(v).toLocaleString('es-AR') }
+function _fFecha(d) { return d ? (d instanceof Date ? d : parseLocalDate(d)).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—' }
+function _val(id) { return document.getElementById(id)?.value ?? '' }
+function _lineas(t) { return String(t || '').split('\n').map(x => x.trim()).filter(Boolean) }
+
+function _cargarFuentesInforme() {
+  if (document.getElementById('inf-fonts')) return
+  const l = document.createElement('link')
+  l.id = 'inf-fonts'; l.rel = 'stylesheet'
+  l.href = 'https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap'
+  document.head.appendChild(l)
+}
+
+// ── Datos calculados desde el panel ─────────────────────────────────
+function _infCalc(c) {
+  const vs = _visitasDe(c.id).filter(v => v.estado === 'Realizada').sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
+  const porCanal = {}
+  vs.forEach(v => { const k = INF_CANALES.includes(v.canal) ? v.canal : 'Otros'; porCanal[k] = (porCanal[k] || 0) + 1 })
+  const val = {}
+  vs.forEach(v => (v.valoraciones || []).forEach(x => { val[x] = (val[x] || 0) + 1 }))
+  const ORDEN = ['Primera visita', 'Segunda visita', 'Oferta', 'Reserva']
+  const avanzada = vs.reduce((m, v) => Math.max(m, ORDEN.indexOf(v.etapa)), -1)
+  const segundas = vs.filter(v => ['Segunda visita', 'Oferta', 'Reserva'].includes(v.etapa)).length
+  const pub = c.fecha_publicacion ? parseLocalDate(c.fecha_publicacion) : null
+  const dias = pub ? Math.max(0, Math.round((new Date() - pub) / 864e5)) : null
+  const d = c.datos_tokko || {}
+  const sup = d.sup_cubierta || d.sup_total || null
+  const m2f = v => Number(v).toLocaleString('es-AR', { maximumFractionDigits: 2 })
+  return { m2f, vs, porCanal, val, avanzada: avanzada >= 0 ? ORDEN[avanzada] : null, segundas, dias, pub, d, m2: c.precio && sup ? c.precio / sup : null }
+}
+
+// ── Abrir / guardar ────────────────────────────────────────────────
+async function abrirInforme(comId, informeId) {
+  const c = comData.find(x => x.id === comId) || _comActual
+  if (!c) return
+  _cargarFuentesInforme()
+  let datos = null, id = null
+  if (informeId) {
+    const { data } = await sb.from('informes_propietario').select('*').eq('id', informeId).maybeSingle()
+    if (data) { datos = data.datos; id = data.id }
+  } else {
+    // Retoma el último borrador si existe
+    const { data } = await sb.from('informes_propietario').select('*').eq('comercializacion_id', c.id).eq('estado', 'Borrador').order('updated_at', { ascending: false }).limit(1)
+    if (data && data[0]) { datos = data[0].datos; id = data[0].id }
+  }
+  _inf = { c, id, datos: datos || _infDefaults(c) }
+  _infLlenarForm()
+  document.getElementById('inf-sub').textContent = c.direccion + (id ? ' · borrador guardado' : '')
+  document.getElementById('modal-informe').classList.add('open')
+  infRender()
+}
+
+function _infDefaults(c) {
+  const k = _infCalc(c)
+  const a = _autz(c)
+  const pend = a?.pendientes?.length ? a.pendientes[a.pendientes.length - 1].n : (a?.hitos.find(h => h.estado === 'futuro')?.n || 1)
+  const precioAlto = (k.val['Precio alto'] || 0)
+  const nVis = k.vs.length
+  const sint = nVis
+    ? `En ${k.dias ?? 'los'} días de publicación la propiedad recibió ${nVis} visita${nVis !== 1 ? 's' : ''}${k.segundas ? `, ${k.segundas} de ellas con interesados que avanzaron a una segunda instancia` : ''}. ${precioAlto && precioAlto / nVis >= 0.4 ? 'La observación más repetida por los visitantes fue el precio, punto que conviene trabajar para mejorar la conversión.' : 'La respuesta del mercado es consistente y seguimos trabajando para concretar la operación.'}`
+    : `La propiedad lleva ${k.dias ?? '[a completar]'} días publicada. Seguimos trabajando en la difusión para generar visitas de calidad.`
+  return {
+    hito: pend,
+    fecha: dateKey(new Date()),
+    propietario: c.propietario || '',
+    propietario_email: c.propietario_email || '',
+    intro: `Presentamos el informe de gestión comercial de ${c.direccion}, correspondiente al período comprendido entre el ${_fFecha(k.pub)} y el ${_fFecha(new Date())}. Reúne las acciones realizadas, la respuesta del mercado y nuestras recomendaciones para los próximos pasos.`,
+    sintesis: sint,
+    acciones: INF_ACCIONES.filter(x => !/Zonaprop|Meta|Cartel/.test(x)),
+    acciones_extra: '',
+    consultas: {},
+    zp_on: false, zp: {}, zp_lectura: '',
+    meta_on: false, meta: {}, meta_inv: false, meta_lectura: '',
+    vis_on: true, vis_coment: true,
+    c_vis: 'La propiedad está publicada en los principales portales y recibe exposición sostenida.',
+    c_int: nVis ? `${nVis === 1 ? 'Se concretó 1 visita' : `Se concretaron ${nVis} visitas`}${k.avanzada ? `; la instancia más avanzada fue "${k.avanzada.toLowerCase()}"` : ''}.` : 'El interés todavía no se tradujo en visitas; trabajamos en mejorar la respuesta.',
+    c_conv: k.segundas ? 'Hay interesados en una instancia avanzada; el foco está en llevarlos a una oferta.' : 'El punto a trabajar es la conversión de las visitas en ofertas.',
+    precio_txt: precioAlto ? `${precioAlto === nVis ? (nVis === 1 ? 'El visitante mencionó' : 'Todos los visitantes mencionaron') : `${precioAlto} de ${nVis} visitantes mencionaron`} el precio como una objeción. Sugerimos revisar el valor de publicación en función del mercado actual.` : '',
+    precio_prop: '',
+    pasos: ['Sostener la publicación y el seguimiento de cada consulta.', precioAlto ? 'Evaluar juntos un ajuste del precio de publicación.' : 'Reforzar la difusión en portales y redes.', 'Coordinar una reunión para repasar este informe.'].join('\n'),
+  }
+}
+
+function _infLlenarForm() {
+  const D = _inf.datos, c = _inf.c, a = _autz(c), k = _infCalc(c)
+  document.getElementById('inf-hito').innerHTML = Array.from({ length: AUTZ_HITOS }, (_, i) => i + 1)
+    .map(n => `<option value="${n}">${n === AUTZ_HITOS ? 'Informe final' : 'Informe ' + n} de ${AUTZ_HITOS}${a ? ' · ' + a.hitos[n - 1].fecha.toLocaleDateString('es-AR') : ''}${a?.hitos[n - 1].estado === 'enviado' ? ' (enviado)' : ''}</option>`).join('')
+  document.getElementById('inf-hito').value = D.hito || 1
+  document.getElementById('inf-fecha').value = D.fecha || dateKey(new Date())
+  document.getElementById('inf-prop').value = D.propietario || ''
+  document.getElementById('inf-prop-email').value = D.propietario_email || c.propietario_email || ''
+  document.getElementById('inf-intro').value = D.intro || ''
+  document.getElementById('inf-sintesis').value = D.sintesis || ''
+  document.getElementById('inf-acciones').innerHTML = INF_ACCIONES.map((x, i) =>
+    `<label><input type="checkbox" data-acc="${i}" ${D.acciones.includes(x) ? 'checked' : ''} onchange="infRender()"> ${raEsc(x)}</label>`).join('')
+  document.getElementById('inf-acciones-extra').value = D.acciones_extra || ''
+  document.getElementById('inf-consultas').innerHTML = INF_CANALES.map(ch =>
+    `<div class="form-group"><label>${ch} <span style="text-transform:none;color:#9CA3AF;font-weight:400">· ${k.porCanal[ch] || 0} visitas</span></label><input type="number" min="0" data-cons="${ch}" placeholder="Consultas" value="${D.consultas?.[ch] ?? ''}" oninput="infRender()"></div>`).join('')
+  document.getElementById('inf-zp-on').checked = !!D.zp_on
+  document.getElementById('inf-zp-body').innerHTML = INF_ZP_FILAS.map(([key, lbl]) =>
+    `<tr><td>${lbl}</td>${['nuestro', 'promedio', 'mejor'].map(col => `<td><input type="number" data-zp="${key}.${col}" value="${D.zp?.[key + '.' + col] ?? (key === 'm2' && col === 'nuestro' && k.m2 ? Math.round(k.m2) : '')}" oninput="infRender()"></td>`).join('')}</tr>`).join('')
+  document.getElementById('inf-zp-lectura').value = D.zp_lectura || ''
+  document.getElementById('inf-meta-on').checked = !!D.meta_on
+  document.getElementById('inf-meta-campos').innerHTML = INF_META.map(([key, lbl]) =>
+    `<div class="form-group"><label>${lbl}</label><input type="number" data-meta="${key}" value="${D.meta?.[key] ?? ''}" oninput="infRender()"></div>`).join('')
+  document.getElementById('inf-meta-inv').checked = !!D.meta_inv
+  document.getElementById('inf-meta-lectura').value = D.meta_lectura || ''
+  document.getElementById('inf-vis-on').checked = D.vis_on !== false
+  document.getElementById('inf-vis-coment').checked = D.vis_coment !== false
+  document.getElementById('inf-vis-info').textContent = `${k.vs.length} visitas realizadas`
+  ;['c_vis', 'c_int', 'c_conv'].forEach(f => document.getElementById('inf-' + f.replace('_', '-')).value = D[f] || '')
+  document.getElementById('inf-precio-txt').value = D.precio_txt || ''
+  document.getElementById('inf-precio-prop').value = D.precio_prop || ''
+  document.getElementById('inf-pasos').value = D.pasos || ''
+  document.getElementById('inf-zp').style.display = D.zp_on ? 'block' : 'none'
+  document.getElementById('inf-meta').style.display = D.meta_on ? 'block' : 'none'
+  document.getElementById('inf-estado').textContent = ''
+}
+
+function infToggle(cual) {
+  document.getElementById('inf-' + cual).style.display = document.getElementById('inf-' + cual + '-on').checked ? 'block' : 'none'
+  infRender()
+}
+
+function _infLeerForm() {
+  const D = {}
+  D.hito = parseInt(_val('inf-hito')) || 1
+  D.fecha = _val('inf-fecha') || dateKey(new Date())
+  D.propietario = _val('inf-prop').trim()
+  D.propietario_email = _val('inf-prop-email').trim()
+  D.intro = _val('inf-intro'); D.sintesis = _val('inf-sintesis')
+  D.acciones = [...document.querySelectorAll('#inf-acciones input:checked')].map(i => INF_ACCIONES[i.dataset.acc])
+  D.acciones_extra = _val('inf-acciones-extra')
+  D.consultas = {}; document.querySelectorAll('[data-cons]').forEach(i => { if (i.value !== '') D.consultas[i.dataset.cons] = _n(i.value) })
+  D.zp_on = document.getElementById('inf-zp-on').checked
+  D.zp = {}; document.querySelectorAll('[data-zp]').forEach(i => { if (i.value !== '') D.zp[i.dataset.zp] = _n(i.value) })
+  D.zp_lectura = _val('inf-zp-lectura')
+  D.meta_on = document.getElementById('inf-meta-on').checked
+  D.meta = {}; document.querySelectorAll('[data-meta]').forEach(i => { if (i.value !== '') D.meta[i.dataset.meta] = _n(i.value) })
+  D.meta_inv = document.getElementById('inf-meta-inv').checked
+  D.meta_lectura = _val('inf-meta-lectura')
+  D.vis_on = document.getElementById('inf-vis-on').checked
+  D.vis_coment = document.getElementById('inf-vis-coment').checked
+  D.c_vis = _val('inf-c-vis'); D.c_int = _val('inf-c-int'); D.c_conv = _val('inf-c-conv')
+  D.precio_txt = _val('inf-precio-txt'); D.precio_prop = _val('inf-precio-prop'); D.pasos = _val('inf-pasos')
+  return D
+}
+
+async function guardarInforme(estado, extra) {
+  const D = _infLeerForm()
+  _inf.datos = D
+  const row = { comercializacion_id: _inf.c.id, hito: D.hito, datos: D, updated_at: new Date().toISOString(), ...(estado ? { estado } : {}), ...(extra || {}) }
+  const res = _inf.id
+    ? await sb.from('informes_propietario').update(row).eq('id', _inf.id).select().single()
+    : await sb.from('informes_propietario').insert(row).select().single()
+  if (res.error) { toast('No se pudo guardar el informe: ' + res.error.message, true); return false }
+  _inf.id = res.data.id
+  // El email del propietario queda guardado en la ficha
+  if (D.propietario_email && D.propietario_email !== _inf.c.propietario_email) {
+    await sb.from('comercializaciones').update({ propietario_email: D.propietario_email }).eq('id', _inf.c.id)
+    _inf.c.propietario_email = D.propietario_email
+  }
+  if (!estado) { toast('Borrador guardado'); document.getElementById('inf-estado').textContent = 'Borrador guardado ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) }
+  return true
+}
+
+function cerrarInforme() { closeModal('informe') }
+
+// Marca el hito como enviado en la propiedad
+async function _infMarcarHito(n) {
+  const c = _inf.c
+  const lista = (c.informes_enviados || []).filter(x => x.n !== n)
+  lista.push({ n, fecha: dateKey(new Date()), por: currentUser?.email || null, informe_id: _inf.id })
+  const { error } = await sb.from('comercializaciones').update({ informes_enviados: lista }).eq('id', c.id)
+  if (!error) c.informes_enviados = lista
+}
+
+// ── Construcción de las páginas ─────────────────────────────────────
+function infRender() {
+  if (!_inf) return
+  const D = _infLeerForm()
+  const paginas = _infPaginas(_inf.c, D)
+  const prev = document.getElementById('inf-preview')
+  prev.innerHTML = paginas.map(p => `<div class="inf-escala"><div class="inf-page-wrap">${p}</div></div>`).join('')
+}
+
+function _infPaginas(c, D) {
+  const k = _infCalc(c)
+  const d = k.d
+  const total = []   // secciones de contenido (páginas 2..n)
+  const sec = []     // [titulo, html]
+
+  // Numeración dinámica de secciones
+  let num = 0
+  const T = (t) => `<div class="inf-kicker">${String(++num).padStart(2, '0')}</div><h2 class="inf-h2">${t}</h2>`
+
+  const operacion = `${c.operacion || 'Venta'} · ${_fmtUSD(c.precio, c.moneda)}`
+  const periodo = `${k.pub ? k.pub.toLocaleDateString('es-AR') : '[a completar]'} al ${parseLocalDate(D.fecha).toLocaleDateString('es-AR')}`
+  const nHito = D.hito === AUTZ_HITOS ? 'Informe final' : `Informe ${D.hito} de ${AUTZ_HITOS}`
+
+  // ── Portada
+  const portada = `<div class="inf-page inf-portada">
+    <img src="${LOGO_WHITE_B64}" class="inf-logo-portada" alt="">
+    <div class="inf-portada-centro">
+      <div class="inf-portada-kicker">INFORME DE GESTIÓN COMERCIAL</div>
+      <h1 class="inf-portada-dir">${raEsc(c.direccion)}</h1>
+      <div class="inf-portada-barrio">${raEsc([c.barrio, 'Ciudad Autónoma de Buenos Aires'].filter(Boolean).join(' · '))}</div>
+    </div>
+    <div class="inf-portada-grid">
+      <div><span>Preparado para</span><b>${raEsc(D.propietario || '[a completar]')}</b></div>
+      <div><span>Operación</span><b>${raEsc(operacion)}</b></div>
+      <div><span>Período analizado</span><b>${raEsc(periodo)}</b></div>
+      <div><span>Fecha del informe</span><b>${_fFecha(D.fecha)} · ${nHito}</b></div>
+    </div>
+    <div class="inf-portada-pie">Real Aires Bienes Raíces · Migueletes 2386 1°, CABA<br>Pablo Zárate Erdini · Corredor Inmobiliario · CUCICBA 6335 · CMCPSI 7163</div>
+  </div>`
+
+  // ── 01 Resumen + 02 La propiedad
+  const consTotal = Object.values(D.consultas || {}).reduce((s, v) => s + (v || 0), 0)
+  const tarjetas = [
+    [k.dias != null ? k.dias : '—', 'días de publicación'],
+    [consTotal || '—', 'consultas recibidas'],
+    [k.vs.length, 'visitas realizadas'],
+    [k.segundas, 'interesados en instancia avanzada'],
+  ]
+  const ficha = [
+    ['Dirección', c.direccion],
+    ['Tipo', d.tipo],
+    ['Superficie', [d.sup_total ? k.m2f(d.sup_total) + ' m² totales' : '', d.sup_cubierta ? k.m2f(d.sup_cubierta) + ' m² cubiertos' : '', d.sup_semicubierta ? k.m2f(d.sup_semicubierta) + ' m² semicubiertos' : ''].filter(Boolean).join(' · ')],
+    ['Composición', [d.ambientes ? d.ambientes + ' ambientes' : '', d.dormitorios ? d.dormitorios + ' dormitorios' : '', d.banos ? d.banos + ' baño' + (d.banos > 1 ? 's' : '') : '', d.cocheras ? d.cocheras + ' cochera' + (d.cocheras > 1 ? 's' : '') : ''].filter(Boolean).join(' · ')],
+    ['Ubicación', [d.disposicion, d.orientacion ? 'orientación ' + d.orientacion.toLowerCase() : ''].filter(Boolean).join(' · ')],
+    ['Atributos', (d.atributos || []).slice(0, 8).join(' · ')],
+    ['Precio', _fmtUSD(c.precio, c.moneda) + (k.m2 ? ` · ${_fmtUSD(k.m2, c.moneda)} por m²` : '')],
+    ['Expensas', d.expensas ? '$ ' + Number(d.expensas).toLocaleString('es-AR') : ''],
+  ].filter(([, v]) => v)
+  sec.push(`${T('Resumen ejecutivo')}
+    <p class="inf-p">${raEsc(D.intro)}</p>
+    <div class="inf-cards4">${tarjetas.map(([v, l]) => `<div class="inf-card"><div class="inf-card-v">${v}</div><div class="inf-card-l">${l}</div></div>`).join('')}</div>
+    <div class="inf-sintesis"><div class="inf-sintesis-t">EN SÍNTESIS</div><p>${raEsc(D.sintesis)}</p></div>
+    ${T('La propiedad')}
+    <div class="inf-ficha-wrap">
+      ${d.foto ? `<img src="${raEsc(d.foto)}" crossorigin="anonymous" class="inf-foto" alt="" onerror="this.remove()">` : ''}
+      <table class="inf-ficha">${ficha.map(([kk, v]) => `<tr><td>${kk}</td><td>${raEsc(v)}</td></tr>`).join('')}</table>
+    </div>`)
+
+  // ── 03 Acciones + consultas por canal
+  const acciones = [...D.acciones, ..._lineas(D.acciones_extra)]
+  const filasCanal = INF_CANALES.map(ch => [ch, D.consultas?.[ch] ?? null, k.porCanal[ch] || 0]).filter(([, cons, vis]) => cons || vis)
+  const totCons = filasCanal.reduce((s, r) => s + (r[1] || 0), 0), totVis = filasCanal.reduce((s, r) => s + r[2], 0)
+  sec.push(`${T('Acciones realizadas')}
+    <ol class="inf-acciones">${acciones.map(a => `<li>${raEsc(a)}</li>`).join('')}</ol>
+    <h3 class="inf-h3">Consultas y visitas por canal</h3>
+    ${filasCanal.length ? `<table class="inf-tabla"><thead><tr><th>Canal</th><th>Consultas</th><th>Visitas</th></tr></thead><tbody>
+      ${filasCanal.map(([ch, cons, vis]) => `<tr><td>${ch}</td><td>${cons ?? '—'}</td><td>${vis}</td></tr>`).join('')}
+      <tr class="inf-total"><td>Total</td><td>${totCons || '—'}</td><td>${totVis}</td></tr></tbody></table>` : '<p class="inf-p inf-muted">Sin consultas registradas en el período.</p>'}`)
+
+  // ── 04 Zonaprop (opcional)
+  if (D.zp_on) {
+    const z = (f, col) => D.zp?.[f + '.' + col] ?? null
+    const pct = (a, b) => (a != null && b) ? (a / b * 100).toFixed(1).replace('.', ',') + '%' : '—'
+    const cols = ['promedio', 'mejor', 'nuestro']
+    const maxExpo = Math.max(...cols.map(cc => z('expo', cc) || 0), 1), maxVis = Math.max(...cols.map(cc => z('visitas', cc) || 0), 1)
+    const NOMB = { promedio: 'Promedio', mejor: 'Mejor aviso', nuestro: 'Nuestro aviso' }
+    sec.push(`${T('Resultados en Zonaprop')}
+      <table class="inf-tabla"><thead><tr><th>Métrica</th><th>Promedio</th><th>Mejor aviso</th><th>Nuestro aviso</th></tr></thead><tbody>
+        <tr><td>Precio por m²</td>${cols.map(cc => `<td>${_fmtUSD(z('m2', cc), 'USD')}</td>`).join('')}</tr>
+        <tr><td>Exposición</td>${cols.map(cc => `<td>${_fmtN(z('expo', cc))}</td>`).join('')}</tr>
+        <tr><td>Visitas al aviso</td>${cols.map(cc => `<td>${_fmtN(z('visitas', cc))}</td>`).join('')}</tr>
+        <tr><td>% que ingresa al aviso</td>${cols.map(cc => `<td>${pct(z('visitas', cc), z('expo', cc))}</td>`).join('')}</tr>
+        <tr><td>Interesados</td>${cols.map(cc => `<td>${_fmtN(z('interesados', cc))}</td>`).join('')}</tr>
+        <tr><td>% de interesados</td>${cols.map(cc => `<td>${pct(z('interesados', cc), z('visitas', cc))}</td>`).join('')}</tr>
+      </tbody></table>
+      <div class="inf-glosario"><b>Exposición:</b> veces que el aviso apareció en los listados. <b>Visitas:</b> personas que abrieron el aviso. <b>Interesados:</b> quienes dejaron sus datos o consultaron.</div>
+      <div class="inf-barras">${cols.map(cc => `<div class="inf-barra-fila"><div class="inf-barra-lbl">${NOMB[cc]}</div><div class="inf-barra-cont">
+        <div class="inf-barra" style="width:${(z('expo', cc) || 0) / maxExpo * 62}%"><span>${_fmtN(z('expo', cc))} exposición</span></div>
+        <div class="inf-barra inf-barra2" style="width:${(z('visitas', cc) || 0) / maxVis * 62}%"><span>${_fmtN(z('visitas', cc))} visitas</span></div></div></div>`).join('')}</div>
+      ${_lineas(D.zp_lectura).length ? `<h3 class="inf-h3">Nuestra lectura</h3><ul class="inf-lectura">${_lineas(D.zp_lectura).map(x => `<li>${raEsc(x)}</li>`).join('')}</ul>` : ''}`)
+  }
+
+  // ── 05 Meta (opcional)
+  if (D.meta_on) {
+    const m = D.meta || {}
+    const uno = (a, b) => (a && b) ? `1 de cada ${Math.round(a / b).toLocaleString('es-AR')}` : '—'
+    const inversion = (m.conversaciones && m.costo) ? m.conversaciones * m.costo : null
+    sec.push(`${T('Campaña en Meta')}
+      <div class="inf-cards3">${INF_META.filter(([kk]) => kk !== 'costo' || D.meta_inv).map(([kk, l]) => `<div class="inf-card"><div class="inf-card-v">${kk === 'costo' ? _fmtUSD(m[kk], 'USD') : _fmtN(m[kk])}</div><div class="inf-card-l">${l}</div></div>`).join('')}</div>
+      <h3 class="inf-h3">Recorrido del público</h3>
+      <div class="inf-recorrido">
+        <div><b>${_fmtN(m.alcance)}</b><span>personas alcanzadas</span></div><div class="inf-flecha">›</div>
+        <div><b>${_fmtN(m.clics)}</b><span>clics · ${uno(m.alcance, m.clics)}</span></div><div class="inf-flecha">›</div>
+        <div><b>${_fmtN(m.conversaciones)}</b><span>conversaciones · ${uno(m.clics, m.conversaciones)}</span></div>
+      </div>
+      ${D.meta_inv && inversion ? `<div class="inf-sintesis" style="margin-top:14px"><div class="inf-sintesis-t">INVERSIÓN TOTAL</div><p>${_fmtUSD(inversion, 'USD')} (${_fmtN(m.conversaciones)} conversaciones × ${_fmtUSD(m.costo, 'USD')})</p></div>` : ''}
+      ${_lineas(D.meta_lectura).length ? `<h3 class="inf-h3">Nuestra lectura</h3><ul class="inf-lectura">${_lineas(D.meta_lectura).map(x => `<li>${raEsc(x)}</li>`).join('')}</ul>` : ''}`)
+  }
+
+  // ── Visitas y devoluciones
+  if (D.vis_on) {
+    const topVal = Object.entries(k.val).sort((a, b) => b[1] - a[1]).slice(0, 6)
+    const filas = k.vs.slice(-14)
+    const hist = (c.historial_precios || [])
+    sec.push(`${T('Visitas y devoluciones')}
+      ${k.vs.length ? `<table class="inf-tabla inf-tabla-vis"><thead><tr><th>Fecha</th><th>Canal</th><th>Etapa</th><th>Devolución</th></tr></thead><tbody>
+        ${filas.map(v => `<tr><td style="white-space:nowrap">${new Date(v.fecha_hora).toLocaleDateString('es-AR')}</td><td>${raEsc(v.canal || '—')}</td><td>${raEsc(v.etapa || '—')}${v.interes ? `<div class="inf-muted">Interés ${raEsc(v.interes.toLowerCase())}</div>` : ''}</td>
+          <td>${(v.valoraciones || []).map(x => `<span class="inf-chip">${raEsc(x)}</span>`).join(' ')}${D.vis_coment && v.devolucion ? `<div class="inf-coment">${raEsc(v.devolucion)}</div>` : ''}</td></tr>`).join('')}
+      </tbody></table>${k.vs.length > filas.length ? `<p class="inf-muted" style="margin-top:6px">Se muestran las ${filas.length} visitas más recientes de ${k.vs.length}.</p>` : ''}`
+        : '<p class="inf-p inf-muted">Todavía no se registraron visitas en el período.</p>'}
+      ${topVal.length ? `<h3 class="inf-h3">Lo que más mencionaron los visitantes</h3><div class="inf-val">${topVal.map(([x, n]) => `<div><b>${n}</b><span>${raEsc(x)}</span></div>`).join('')}</div>` : ''}
+      ${hist.length > 1 ? `<h3 class="inf-h3">Evolución del precio</h3><div class="inf-precios">${hist.map(h => `<div><span>${parseLocalDate(h.fecha).toLocaleDateString('es-AR')}</span><b>${_fmtUSD(h.precio, h.moneda)}</b></div>`).join('<div class="inf-flecha">›</div>')}</div>` : ''}`)
+  }
+
+  // ── Conclusiones
+  const pasos = _lineas(D.pasos)
+  sec.push(`${T('Conclusiones')}
+    <div class="inf-cards3c">
+      <div class="inf-concl"><div class="inf-concl-t">Visibilidad</div><p>${raEsc(D.c_vis)}</p></div>
+      <div class="inf-concl"><div class="inf-concl-t">Interés</div><p>${raEsc(D.c_int)}</p></div>
+      <div class="inf-concl"><div class="inf-concl-t">Conversión</div><p>${raEsc(D.c_conv)}</p></div>
+    </div>
+    ${D.precio_txt || D.precio_prop ? `<h3 class="inf-h3">Posicionamiento de precio</h3><p class="inf-p">${raEsc(D.precio_txt)}${D.precio_prop ? ` Proponemos un precio de publicación de <b>${_fmtUSD(_n(D.precio_prop), c.moneda)}</b>.` : ''}</p>` : ''}
+    ${pasos.length ? `<h3 class="inf-h3">Próximos pasos</h3><ol class="inf-acciones">${pasos.map(p => `<li>${raEsc(p)}</li>`).join('')}</ol>` : ''}
+    <p class="inf-p" style="margin-top:14px">Quedamos a disposición para coordinar una reunión y repasar juntos este informe.</p>
+    <div class="inf-firma">
+      <div><b>Pablo Zárate Erdini</b><span>Corredor Inmobiliario · Martillero Público</span><span>CUCICBA 6335 · CMCPSI 7163</span><span>pabloe@realaires.com.ar</span></div>
+      ${c.asesor ? `<div><b>${raEsc(c.asesor)}</b><span>Asesor/a a cargo</span>${c.asesor_email ? `<span>${raEsc(c.asesor_email)}</span>` : ''}</div>` : ''}
+      <img src="${LOGO_BLACK_B64}" alt="" class="inf-firma-logo">
+    </div>`)
+
+  // Armado: cada sección es una página con encabezado y pie, salvo la primera que agrupa 01 y 02
+  const totalPag = sec.length + 1
+  const paginas = [portada, ...sec.map((html, i) => `<div class="inf-page">
+      <div class="inf-head"><img src="${LOGO_BLACK_B64}" alt=""><div>Informe de gestión comercial<br><b>${raEsc(c.direccion)}</b></div></div>
+      <div class="inf-body">${html}</div>
+      <div class="inf-foot"><span>Real Aires Bienes Raíces</span><span>${i + 2} / ${totalPag}</span></div>
+    </div>`)]
+  return paginas
+}
+
+// ── PDF ─────────────────────────────────────────────────────────────
+function _cargarScript(src) {
+  return new Promise((ok, err) => {
+    if (document.querySelector(`script[src="${src}"]`)) return ok()
+    const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = err; document.head.appendChild(s)
+  })
+}
+
+async function _infGenerarPDF() {
+  await _cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+  await _cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+  if (document.fonts?.ready) await document.fonts.ready
+  const D = _infLeerForm()
+  const cont = document.createElement('div')
+  cont.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;z-index:-1'
+  cont.innerHTML = _infPaginas(_inf.c, D).join('')
+  document.body.appendChild(cont)
+  // Esperar imágenes
+  await Promise.all([...cont.querySelectorAll('img')].map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r })))
+  const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true })
+  const pages = cont.querySelectorAll('.inf-page')
+  for (let i = 0; i < pages.length; i++) {
+    const canvas = await html2canvas(pages[i], { scale: 1.8, useCORS: true, backgroundColor: '#ffffff', logging: false })
+    if (i) pdf.addPage()
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.86), 'JPEG', 0, 0, 210, 297)
+  }
+  cont.remove()
+  return pdf
+}
+
+function _infNombreArchivo() {
+  const base = (_inf.c.direccion || 'propiedad').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_').replace(/^_|_$/g, '')
+  return `Informe_${base}_${_val('inf-fecha') || dateKey(new Date())}.pdf`
+}
+
+async function descargarInformePDF() {
+  const btn = document.getElementById('inf-btn-pdf')
+  btn.disabled = true; btn.textContent = 'Generando PDF...'
+  try {
+    const pdf = await _infGenerarPDF()
+    pdf.save(_infNombreArchivo())
+    const D = _infLeerForm()
+    if (await guardarInforme('Descargado', { descargado_at: new Date().toISOString() })) {
+      await _infMarcarHito(D.hito)
+      registrarLog('informe_descargado', 'comercializaciones', _inf.c.id, { direccion: _inf.c.direccion, hito: D.hito })
+      _inf.id = null   // el próximo informe empieza como borrador nuevo
+      toast('PDF descargado. El informe quedó registrado como presentado.')
+      renderAutzCom(); renderComercializacion(); actualizarBadgeVisitas(); _renderInformesCom()
+    }
+  } catch (e) {
+    toast('No se pudo generar el PDF: ' + e.message, true)
+  } finally { btn.disabled = false; btn.textContent = '⬇ Descargar PDF' }
+}
+
+function abrirEnvioInforme() {
+  const D = _infLeerForm()
+  const c = _inf.c
+  document.getElementById('inf-env-para').value = D.propietario_email || c.propietario_email || ''
+  document.getElementById('inf-env-asunto').value = `Informe de gestión comercial · ${c.direccion}`
+  document.getElementById('inf-env-msg').value =
+`Estimado/a ${D.propietario || ''}:
+
+Le acercamos el informe de gestión comercial de ${c.direccion}, con las acciones realizadas, la respuesta del mercado y nuestras recomendaciones para los próximos pasos.
+
+Quedamos a disposición para coordinar una reunión y repasarlo juntos.
+
+Saludos cordiales,
+${c.asesor || _miNombre()}
+Real Aires Bienes Raíces`
+  document.getElementById('modal-inf-envio').classList.add('open')
+}
+
+async function enviarInforme() {
+  const para = _val('inf-env-para').trim()
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(para)) { toast('Revisá el email del propietario', true); return }
+  const btn = document.getElementById('inf-env-btn')
+  btn.disabled = true; btn.textContent = 'Generando y enviando...'
+  try {
+    document.getElementById('inf-prop-email').value = para
+    if (!(await guardarInforme(null))) throw new Error('no se pudo guardar')
+    const pdf = await _infGenerarPDF()
+    const b64 = pdf.output('datauristring').split(',')[1]
+    const res = await _callEdgeFn('enviar-informe', {
+      informe_id: _inf.id, para, asunto: _val('inf-env-asunto'), mensaje: _val('inf-env-msg'),
+      archivo: _infNombreArchivo(), pdf_base64: b64,
+    })
+    const r = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(r.error || 'Error ' + res.status)
+    const D = _infLeerForm()
+    _inf.c.informes_enviados = r.informes_enviados || _inf.c.informes_enviados
+    registrarLog('informe_enviado_mail', 'comercializaciones', _inf.c.id, { direccion: _inf.c.direccion, hito: D.hito, para })
+    _inf.id = null
+    closeModal('inf-envio')
+    toast('Informe enviado a ' + para)
+    renderAutzCom(); renderComercializacion(); actualizarBadgeVisitas(); _renderInformesCom()
+  } catch (e) {
+    toast('No se pudo enviar: ' + e.message, true)
+  } finally { btn.disabled = false; btn.textContent = 'Enviar' }
+}
+
+// ── Historial de informes en la ficha ───────────────────────────────
+async function _renderInformesCom() {
+  const el = document.getElementById('com-informes-list')
+  if (!el || !_comActual) return
+  const { data } = await sb.from('informes_propietario').select('id, estado, hito, created_at, updated_at, enviado_at, enviado_a, descargado_at').eq('comercializacion_id', _comActual.id).order('created_at', { ascending: false })
+  const lista = data || []
+  el.innerHTML = lista.length ? lista.map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:12.5px">
+      <span>${i.hito === AUTZ_HITOS ? 'Informe final' : 'Informe ' + (i.hito || '')} · ${i.estado === 'Enviado' ? `enviado a ${raEsc(i.enviado_a || '')} el ${new Date(i.enviado_at).toLocaleDateString('es-AR')}` : i.estado === 'Descargado' ? `descargado el ${new Date(i.descargado_at).toLocaleDateString('es-AR')}` : `borrador del ${new Date(i.updated_at).toLocaleDateString('es-AR')}`}</span>
+      <button class="action-btn" onclick="abrirInforme('${_comActual.id}','${i.id}')">${i.estado === 'Borrador' ? 'Continuar' : 'Ver'}</button></div>`).join('')
+    : '<div style="font-size:12px;color:#9CA3AF">Todavía no se preparó ningún informe.</div>'
 }
 </script>
 
