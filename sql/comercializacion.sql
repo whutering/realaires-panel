@@ -153,3 +153,48 @@ create policy inf_prop_all on public.informes_propietario for all to authenticat
          where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')))
   with check (public.ra_es_admin() or exists (select 1 from public.comercializaciones c
          where c.id = comercializacion_id and c.asesor_email = (auth.jwt() ->> 'email')));
+
+-- ════════════════════════════════════════════════════════════════════
+-- CRUCE PROPIEDADES PROPIAS ↔ BÚSQUEDAS ACTIVAS (agregado)
+-- Para cada propiedad en comercialización devuelve las búsquedas activas
+-- que encajan. De búsquedas de otros asesores solo informa el asesor.
+-- ════════════════════════════════════════════════════════════════════
+create or replace function public.ra_cruce_comercializaciones(p_ids uuid[])
+returns table (comercializacion_id uuid, busqueda_id uuid, asesor text, es_propia boolean, cliente text)
+language sql stable security definer
+set search_path = public
+as $$
+  select c.id,
+         case when mine then b.id end,
+         b.asesor,
+         mine,
+         case when mine then b.cliente_nombre end
+  from comercializaciones c
+  cross join lateral (select
+      nullif(c.datos_tokko ->> 'tipo', '')                      as tipo,
+      nullif(c.datos_tokko ->> 'ambientes', '')::numeric::int   as amb,
+      nullif(c.datos_tokko ->> 'dormitorios', '')::numeric::int as dorm,
+      coalesce(nullif(c.datos_tokko ->> 'sup_cubierta', '')::numeric, nullif(c.datos_tokko ->> 'sup_total', '')::numeric) as sup
+    ) p
+  join busquedas b on b.estado = 'Activa'
+  cross join lateral (select (b.asesor_email = (auth.jwt() ->> 'email') or ra_es_admin()) as mine) m
+  where c.id = any (p_ids)
+    and auth.uid() is not null
+    and c.estado = 'Activa'
+    and b.operacion = c.operacion
+    and (cardinality(b.tipos) = 0 or p.tipo is null or p.tipo = any (b.tipos))
+    and (cardinality(b.barrios) = 0 or c.barrio is null or exists (
+          select 1 from unnest(b.barrios) z
+          where ra_norm(c.barrio) like '%' || ra_norm(z) || '%'
+             or ra_norm(z) like '%' || ra_norm(c.barrio) || '%'))
+    and (p.amb is null or b.amb_min is null or p.amb >= b.amb_min)
+    and (p.amb is null or b.amb_max is null or p.amb <= b.amb_max)
+    and (p.dorm is null or b.dorm_min is null or p.dorm >= b.dorm_min)
+    and (b.sup_min is null or p.sup is null or p.sup >= b.sup_min)
+    and (c.precio is null or c.moneda is distinct from b.moneda or (
+          (b.precio_max is null or c.precio <= b.precio_max * 1.10) and
+          (b.precio_min is null or c.precio >= b.precio_min * 0.90)))
+$$;
+
+revoke all on function public.ra_cruce_comercializaciones(uuid[]) from public, anon;
+grant execute on function public.ra_cruce_comercializaciones(uuid[]) to authenticated;
